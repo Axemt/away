@@ -1,3 +1,4 @@
+
 import requests
 from requests.exceptions import ConnectionError
 
@@ -12,7 +13,7 @@ class FaasConnection():
 
         self.provider = provider
         self.port = port
-        
+
         has_user = user is not None
         has_password = password is not None
         if has_user and has_password:
@@ -40,7 +41,6 @@ class FaasConnection():
     def get_faas_functions(self) -> [str]:
         """
         Queries the given OpenFaaS server for available functions
-
         Is equivalent to curl -s -X GET http://<faas_endpoint>/system/functions and getting function names
         """
 
@@ -48,7 +48,7 @@ class FaasConnection():
             f'http://{self.auth_address}/system/functions',
             headers={'Content-Type': 'application/json'}
             )
-        
+
         if res.status_code != 200:
 
             if res.status_code == 401:
@@ -61,4 +61,3 @@ class FaasConnection():
             names.append(fn_details['name'])
 
         return names
-

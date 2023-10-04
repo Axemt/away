@@ -43,7 +43,7 @@ class FaasConnection():
             if r.status_code != 200:
                 raise Exception(f'FaaS \'healthz\ check failed: status_code={r.status_code}, r={r.text}')
         except ConnectionError:
-            is_local = provider == 'localhost' or provider == '127.0.0.1'
+            is_local = 'localhost' in self.address or '127.0.0.1' in self.address
 
             raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
 

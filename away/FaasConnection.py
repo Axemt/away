@@ -62,15 +62,26 @@ class FaasConnection():
 
         return names
 
-    def check_fn_present(self, fn_name: str):
+    def check_fn_present(self, fn_name: str) -> bool:
         """
         Checks if the function is present in the FaaS server.
-        Raises an Exception if it is not
 
         arguments:
             fn_name: the name of the function to check
         """
         available_functions = self.get_faas_functions()
 
-        if fn_name not in available_functions:
-            raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {available_functions}')
+        return fn_name in available_functions
+
+    def ensure_fn_present(self, fn_name: str):
+        """
+        Raises an exception if the function is not present in the FaaS server
+
+        arguments:
+            fn_name: the name of the function to check
+        """
+
+        if not self.check_fn_present(fn_name):
+            raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}')
+
+        

@@ -47,7 +47,7 @@ def from_faas_deco(
     function_name = fn.__name__ + namespace
     if replace_underscore: function_name = function_name.replace('_', '-')
 
-    if check_present: faas.check_fn_present(function_name)
+    if check_present: faas.ensure_fn_present(function_name)
 
     endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
 

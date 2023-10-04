@@ -52,7 +52,7 @@ jobs:
     - name: Set-up faas-cli
       run: |
         curl -sSL https://cli.openfaas.com | sudo -E sh
-        faas login --user admin --password 1234
+        faas login --username admin --password 1234
     - name: Deploy Test functions on FaaS   
       run: |
         faas store deploy cows

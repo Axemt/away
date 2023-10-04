@@ -37,6 +37,27 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Start minikube
+      uses: medyagh/setup-minikube@master
+      
+    - name: Deploy FaaS
+      run: |
+        git clone https://github.com/openfaas/faas-netes/tree/master
+        minikube kubectl apply -f faas-netes/namespaces.yml
+        minikube kubectl apply -f faas-netes/yaml
+        minikube kubectl -n openfaas create secret generic basic-auth --from-literal=basic-auth-user=admin --from-literal=basic-auth-password=1234
+        minikube kubectl port-forward svc/gateway 8080:8080 -n openfaas &
+    - name: Set-up faas-cli
+      run: |
+        curl -sSL https://cli.openfaas.com | sudo -E sh
+    - name: Deploy Test functions on FaaS   
+      run: |
+        faas store deploy cows
+        faas store deploy env
+        faas store deploy nodeinfo
+        faas store deploy nslookup
+        faas store deploy shasum
     - name: Test with unittest
       run: |
         ./tests/run.sh

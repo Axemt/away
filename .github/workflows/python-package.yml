@@ -44,10 +44,10 @@ jobs:
     - name: Deploy FaaS
       run: |
         git clone https://github.com/openfaas/faas-netes/
-        minikube kubectl apply -f faas-netes/namespaces.yml
-        minikube kubectl apply -f faas-netes/yaml
-        minikube kubectl -n openfaas create secret generic basic-auth --from-literal=basic-auth-user=admin --from-literal=basic-auth-password=1234
-        minikube kubectl port-forward svc/gateway 8080:8080 -n openfaas &
+        minikube kubectl -- apply -f faas-netes/namespaces.yml
+        minikube kubectl -- apply -f faas-netes/yaml
+        minikube kubectl -- create secret generic basic-auth -n openfaas --from-literal=basic-auth-user=admin --from-literal=basic-auth-password=1234
+        minikube kubectl -- port-forward svc/gateway 8080:8080 -n openfaas &
     - name: Set-up faas-cli
       run: |
         curl -sSL https://cli.openfaas.com | sudo -E sh

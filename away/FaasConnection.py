@@ -11,8 +11,8 @@ class FaasConnection():
         password: str = None,
         ensure_available: bool = True):
 
-        self.provider = provider
-        self.port = port
+        self.address = f'{provider}:{port}' 
+        if ensure_available: self.ensure_available()
 
         has_user = user is not None
         has_password = password is not None
@@ -24,19 +24,28 @@ class FaasConnection():
             auth_details = ''
 
         self.auth = auth_details
-
-        self.address = f'{provider}:{port}' 
         self.auth_address = f'{auth_details}{self.address}'
 
-        if ensure_available:
-            try:
-                r = requests.get(f'http://{self.address}/healthz')
-                if r.status_code != 200:
-                    raise Exception(f'FaaS \'healthz\ check failed: status_code={r.status_code}, r={r.text}')
-            except ConnectionError:
-                is_local = provider == 'localhost' or provider == '127.0.0.1'
+    def __repr__(self) -> str:
+        is_available = True
+        try:
+            self.ensure_available()
+        except:
+            is_available = False
 
-                raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
+        return f'''FaasConnection at endpoint: {self.address};
+        Auth details: {"Not present" if self.auth == "" else "Present"};
+        Is Available: {is_available}'''
+
+    def ensure_available(self):
+        try:
+            r = requests.get(f'http://{self.address}/healthz')
+            if r.status_code != 200:
+                raise Exception(f'FaaS \'healthz\ check failed: status_code={r.status_code}, r={r.text}')
+        except ConnectionError:
+            is_local = provider == 'localhost' or provider == '127.0.0.1'
+
+            raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
 
     def get_faas_functions(self) -> [str]:
         """

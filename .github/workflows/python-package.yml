@@ -6,6 +6,7 @@ name: Python package
 on:
   push:
     branches: [ "master" ]
+    paths: ['away/**', 'tests/**', 'pyproject.toml', 'requirements.txt']
   pull_request:
     branches: [ "master" ]
 

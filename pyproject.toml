@@ -1,0 +1,21 @@
+[project]
+name = "away"
+version = "0.1.0"
+authors = [
+    {name = "Jorge Jiménez García", email = "jjimgar1@outlook.com"},
+]
+description = "An OpenFaaS proxy function builder"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+	'requests'
+]

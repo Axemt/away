@@ -1,11 +1,3 @@
-import sys
-import os
-
-# TODO: This is bad practice and I would like to fix it
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
-sys.path.insert(0, parent_dir)
-
 from away import builder
 from away import FaasConnection
 from hashlib import sha512

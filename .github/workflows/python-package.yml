@@ -43,7 +43,7 @@ jobs:
       
     - name: Deploy FaaS
       run: |
-        git clone https://github.com/openfaas/faas-netes/tree/master
+        git clone https://github.com/openfaas/faas-netes/
         minikube kubectl apply -f faas-netes/namespaces.yml
         minikube kubectl apply -f faas-netes/yaml
         minikube kubectl -n openfaas create secret generic basic-auth --from-literal=basic-auth-user=admin --from-literal=basic-auth-password=1234

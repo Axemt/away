@@ -2,7 +2,7 @@
 [![Python package](https://github.com/Axemt/away/actions/workflows/python-package.yml/badge.svg)](https://github.com/Axemt/away/actions/workflows/python-package.yml)
 ![GitHub](https://img.shields.io/github/license/Axemt/away)
 
-A python library to create local functions of [[OpenFaaS]] functions, allowing their transparent use
+A python library to create local functions of OpenFaaS functions, allowing their transparent use
 
 ## Usage
 
@@ -38,7 +38,7 @@ If you wish to handle errors in the FaaS functions manually you can use the opti
 def fibonacci(name):
 	pass
 
-nslookup(10) # returns (55, 200)
+fibonacci(10) # returns (55, 200)
 ```
 ## Installation
 

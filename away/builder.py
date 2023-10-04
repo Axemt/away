@@ -20,7 +20,7 @@ def from_faas_deco(
     fn: Callable[[str], None],
     faas: FaasConnection,
     namespace: str  = '',
-    check_present: bool = True,
+    ensure_present: bool = True,
     implicit_exception_handling = True,
     post_cleanup: Callable | None = None,
     replace_underscore=True,
@@ -47,7 +47,7 @@ def from_faas_deco(
     function_name = fn.__name__ + namespace
     if replace_underscore: function_name = function_name.replace('_', '-')
 
-    if check_present: faas.ensure_fn_present(function_name)
+    if ensure_present: faas.ensure_fn_present(function_name)
 
     endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
 
@@ -85,7 +85,7 @@ def from_faas_deco(
 def from_faas_str(function_name: str,
     faas: FaasConnection,
     namespace: str  = '',
-    check_present: bool = True,
+    ensure_present: bool = True,
     implicit_exception_handling = True,
     post_cleanup: Callable | None = None,
     replace_underscore=True,
@@ -110,7 +110,7 @@ def from_faas_str(function_name: str,
 
     if replace_underscore: function_name = function_name.replace('_', '-')
 
-    if check_present: faas.check_fn_present(function_name)
+    if ensure_present: faas.ensure_fn_present(function_name)
 
     endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
 

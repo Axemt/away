@@ -1,4 +1,6 @@
 # Away
+[![Python package](https://github.com/Axemt/away/actions/workflows/python-package.yml/badge.svg)](https://github.com/Axemt/away/actions/workflows/python-package.yml)
+![GitHub](https://img.shields.io/github/license/Axemt/away)
 
 A python library to create local functions of [[OpenFaaS]] functions, allowing their transparent use
 

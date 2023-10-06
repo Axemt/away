@@ -32,6 +32,7 @@ async def fibonacci(n):
 	pass
 
 res = await fibonacci(10) # calls the function asynchronously in the background, returns 55
+```
 
 You can also create a function from a name, to for example avoid shadowing a local variable
 ```python

@@ -96,6 +96,12 @@ class TestCalls(unittest.TestCase):
         res, status = env_from_str()
         self.assertEqual(status, 200)
 
+    def test_onearg(self):
+
+        host = 'www.example.com'
+        res, status = nslookup(host)
+        self.assertEqual(status, 200)
+
 
     def test_both_equal(self):
 

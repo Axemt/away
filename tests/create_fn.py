@@ -1,6 +1,7 @@
 from away import builder
 from away import FaasConnection
 from hashlib import sha512
+import inspect
 
 faas = FaasConnection(password='1234')
 
@@ -11,21 +12,21 @@ assert 'nodeinfo' in fn_names, 'This test needs function \'nodeinfo\' available 
 assert 'env' in fn_names, 'This test needs function \'env\' available in FaaS'
 assert 'nslookup' in fn_names, 'This test needs function \'nslookup\' available in FaaS'
 
-@builder.from_faas_deco(faas, 
+@builder.faas_function(faas, 
     implicit_exception_handling=False,
     verbose=True
 )
 def cows():
     pass
 
-@builder.from_faas_deco(faas, 
+@builder.faas_function(faas, 
     post_cleanup=lambda e: e.strip().replace(' ','').replace('-',''), 
     verbose=True
 )
 def shasum(something_to_sha):
     pass
 
-@builder.from_faas_deco(faas,
+@builder.faas_function(faas,
     implicit_exception_handling=False,
     verbose=True
 )
@@ -33,33 +34,33 @@ def nodeinfo():
     pass
 
 
-@builder.from_faas_deco(faas,
+@builder.faas_function(faas,
     implicit_exception_handling=False,
     verbose=True
 )
 def env():
     pass
 
-@builder.from_faas_deco(faas,
+@builder.faas_function(faas,
     implicit_exception_handling=False,
     verbose=True
 )
 def nslookup(host):
     pass
 
-shasum_from_str = builder.from_faas_str('shasum',
+shasum_from_str = builder.sync_from_faas_str('shasum',
         faas,
         post_cleanup=lambda e: e.strip().replace(' ','').replace('-',''),
         verbose=True
     )
 
-nslookup_from_str = builder.from_faas_str('nslookup',
+nslookup_from_str = builder.sync_from_faas_str('nslookup',
         faas,
         implicit_exception_handling=False,
         verbose=True
     )
 
-env_from_str = builder.from_faas_str('env',
+env_from_str = builder.sync_from_faas_str('env',
         faas,
         implicit_exception_handling=False,
         verbose=True
@@ -68,6 +69,10 @@ env_from_str = builder.from_faas_str('env',
 
 import unittest
 class TestCalls(unittest.TestCase):
+
+    def test_dispatches_sync(self):
+
+        self.assertTrue( not inspect.iscoroutinefunction(shasum))
 
     def test_plain(self):
         res, status = cows()

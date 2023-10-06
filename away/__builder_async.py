@@ -8,7 +8,7 @@ from typing import Callable, Any, Awaitable
 
 from .common_utils import parametrized, pack_args
 
-def __builder(function_name: str,
+def __builder_async(function_name: str,
     faas: FaasConnection,
     namespace: str  = '',
     ensure_present: bool = True,
@@ -25,9 +25,10 @@ def __builder(function_name: str,
     endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name+namespace}'
     loop = asyncio.get_event_loop()
 
+    @asyncio.coroutine
     async def faas_fn(*args, **kwargs) -> Awaitable:
 
-        if verbose: print(f'[INFO]: Requesting at endpoint {endpoint} with data={args}')
+        if verbose: print(f'[INFO]: Async-Requesting at endpoint {endpoint} with data={args}')
 
         args = pack_args(args)
 
@@ -65,7 +66,7 @@ def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Awaitable:
 
     function_name = fn.__name__
 
-    return __builder(function_name, *args, **kwargs)
+    return __builder_async(function_name, *args, **kwargs)
 
 
 def from_faas_str(*args, **kwargs) -> Awaitable:
@@ -78,11 +79,11 @@ def from_faas_str(*args, **kwargs) -> Awaitable:
     Usage:
     faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
 
-    env = builder_async.from_faas_str('env', faas)
+    env = builder.async_from_faas_str('env', faas)
 
     res = env()
     
     """
 
 
-    return __builder(*args, **kwargs)
+    return __builder_async(*args, **kwargs)

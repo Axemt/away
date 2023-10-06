@@ -14,9 +14,9 @@ from away import builder, FaasConnection
 
 faas = FaasConnection(’my-faas-server.com’, port=8080, user=‘admin’, password=‘1234’)
 ```
-2. Decorate a stub function with `away.builder.from_faas_deco`:
+2. Decorate a stub function with `away.builder.faas_function`:
 ```python
-@builder.from_faas_deco(faas)
+@builder.faas_function(faas)
 def fibonacci(n):
 	pass
 ```
@@ -25,16 +25,24 @@ def fibonacci(n):
 fibonacci(10) # calls the function in OpenFaaS behind the scenes, returns 55
 ```
 
+4. Or create async versions transparently
+```python
+@builder.faas_function(faas)
+async def fibonacci(n):
+	pass
+
+res = await fibonacci(10) # calls the function asynchronously in the background, returns 55
 
 You can also create a function from a name, to for example avoid shadowing a local variable
 ```python
-fibonacci_with_a_different_name = builder.from_faas_str(’fibonacci’, faas)
+fibonacci_with_a_different_name = builder.sync_from_faas_str(’fibonacci’, faas)
 fibonacci_with_a_different_name(55) # returns 139583862445
 ```
 
-If you wish to handle errors in the FaaS functions manually you can use the option `implicit_exception_handling=False` to make the function return the status code alongside the response. Otherwise, the function raises an exception.
+If you wish to handle errors in the FaaS functions manually you can use the option `implicit_exception_handling=False` to make the function return the status code alongside the response. Otherwise, the function raises an exception. This is only applicable to sync functions
+
 ```python
-@builder.from_faas_deco(faas, implicit_exception_handling=False)
+@builder.faas_function(faas, implicit_exception_handling=False)
 def fibonacci(name):
 	pass
 

@@ -1,9 +1,9 @@
-from away import builder_async, builder
-from away import FaasConnection
+from away import builder, FaasConnection
 from time import time
 import asyncio
 import warnings
 from hashlib import sha512
+import inspect
 
 faas = FaasConnection(password='1234')
 
@@ -11,32 +11,39 @@ fn_names = faas.get_faas_functions()
 assert 'sleep' in fn_names, 'This test needs function \'sleep\' available in FaaS'
 assert 'shasum' in fn_names, 'This test needs function \'shasum\' available in FaaS'
 
-@builder_async.from_faas_deco(faas, verbose=True)
+@builder.faas_function(faas, verbose=True)
 async def sleep(): # sleeps for 2s
     pass
 
-@builder_async.from_faas_deco(faas, verbose=True)
+@builder.faas_function(faas, verbose=True)
 async def nmap(domain):
     pass
 
 
 shasum_cleanup = lambda e: e.strip().replace(' ','').replace('-','')
-@builder_async.from_faas_deco(faas,
+@builder.faas_function(faas,
     post_cleanup=shasum_cleanup,
     verbose=True
 )
 async def shasum(s):
     pass
 
-shasum_faas_sync = builder.from_faas_str('shasum',
+shasum_faas_sync = builder.sync_from_faas_str('shasum',
     faas, 
     verbose=True, 
     post_cleanup=shasum_cleanup
 )
 
+sleep_faas_async = builder.async_from_faas_str('sleep', faas, verbose=True)
+
 
 import unittest
 class TestCalls(unittest.IsolatedAsyncioTestCase):
+
+    async def test_dispatches_async(self):
+
+        self.assertTrue(inspect.iscoroutinefunction(sleep_faas_async))
+        self.assertTrue(inspect.iscoroutinefunction(sleep))
 
     async def test_plain_to_completion(self):
         t = time()
@@ -47,6 +54,7 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
 
     async def test_noawait(self):
         t = time()
+
         sleep()
         sleep()
         sleep()
@@ -71,10 +79,8 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(res_sync, res_async)
 
     async def test_from_str(self):
-
-        time_async = builder_async.from_faas_str('sleep', faas, verbose=True)
         t = time()
-        await time_async()
+        await sleep_faas_async()
         self.assertTrue(time() - t > 2)
 
 

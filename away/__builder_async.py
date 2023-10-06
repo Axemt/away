@@ -25,7 +25,6 @@ def __builder_async(function_name: str,
     endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name+namespace}'
     loop = asyncio.get_event_loop()
 
-    @asyncio.coroutine
     async def faas_fn(*args, **kwargs) -> Awaitable:
 
         if verbose: print(f'[INFO]: Async-Requesting at endpoint {endpoint} with data={args}')

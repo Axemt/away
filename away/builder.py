@@ -11,7 +11,7 @@ from .common_utils import parametrized
 def __pack_args(args):
     # Arg packing/unpacking is dependent on the template used server-side to build
     #  the function. Provide this default, stop-gap solution
-    if len(args) > 0: args=''.join(args)
+    if len(args) > 0: args=''.join([str(e) for e in args])
 
     return args
 

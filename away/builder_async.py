@@ -52,13 +52,13 @@ def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Awaitable:
     This calls an OpenFaaS function synchronously in the given provider using an async backend. The function
     name is the same as the blank function being wrapped
 
-
+    Note that the decorated function does not have to be marked `async`, but it is recommended to serve as documentation
 
     Usage:
     faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
 
     @builder_async.from_faas_deco(faas)
-    def call_this_faas_function(takes, some, arguments):
+    async def call_this_faas_function(takes, some, arguments):
         pass
     
     """

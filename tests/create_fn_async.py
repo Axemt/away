@@ -12,11 +12,11 @@ assert 'sleep' in fn_names, 'This test needs function \'sleep\' available in Faa
 assert 'shasum' in fn_names, 'This test needs function \'shasum\' available in FaaS'
 
 @builder_async.from_faas_deco(faas, verbose=True)
-def sleep(): # sleeps for 2s
+async def sleep(): # sleeps for 2s
     pass
 
 @builder_async.from_faas_deco(faas, verbose=True)
-def nmap(domain):
+async def nmap(domain):
     pass
 
 
@@ -25,7 +25,7 @@ shasum_cleanup = lambda e: e.strip().replace(' ','').replace('-','')
     post_cleanup=shasum_cleanup,
     verbose=True
 )
-def shasum(s):
+async def shasum(s):
     pass
 
 shasum_faas_sync = builder.from_faas_str('shasum',

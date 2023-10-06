@@ -17,5 +17,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-	'requests'
+	'requests',
+    'asyncio'
 ]

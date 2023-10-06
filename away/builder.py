@@ -5,28 +5,59 @@ from .FaasConnection import FaasConnection
 import typing
 from typing import Callable, Any
 
-from .common_utils import parametrized
+from .common_utils import parametrized, pack_args
 
 
-def __pack_args(args):
-    # Arg packing/unpacking is dependent on the template used server-side to build
-    #  the function. Provide this default, stop-gap solution
-    if len(args) > 0: args=''.join([str(e) for e in args])
-
-    return args
-
-@parametrized
-def from_faas_deco(
-    fn: Callable[[str], None],
+def __builder(function_name: str,
     faas: FaasConnection,
     namespace: str  = '',
     ensure_present: bool = True,
     implicit_exception_handling = True,
-    pack_args: Callable[[Any], str | dict ] = __pack_args,
+    pack_args: Callable[[Any], str | dict ] = pack_args,
     post_cleanup: Callable | None = None,
     replace_underscore=True,
     is_auth: bool = False,
     verbose: bool = False) -> Callable[[Any], Any]:
+
+
+    if replace_underscore: function_name = function_name.replace('_', '-')
+
+    if ensure_present: faas.ensure_fn_present(function_name)
+
+    endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
+
+    def faas_fn(*args) -> Any:
+
+        if verbose: print(f'[INFO]: Requesting at endpoint {endpoint} with data={args}')
+
+
+        args = pack_args(args)
+
+        res = requests.get(endpoint, data=args)
+
+        if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
+        if implicit_exception_handling:
+            if res.status_code != 200:
+                raise Exception(f'Function returned non 200 code: {res.status_code}, {res.text}')
+
+
+        r = res.text
+
+        if verbose: print(f'[INFO]: Got contents r={r}')
+        if post_cleanup is not None:
+            r = post_cleanup(r)
+
+        if verbose: print(f'[INFO][SUCCESS]: Finished. r={r}, post_cleanup={post_cleanup is not None}')
+
+        if implicit_exception_handling:
+            return r
+        else:
+            return (r, res.status_code)   
+    
+    return faas_fn
+
+@parametrized
+def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any], Any]:
     """
     Converts a blank function into an OpenFaaS sync function
 
@@ -45,54 +76,12 @@ def from_faas_deco(
     
     """
 
-    function_name = fn.__name__ + namespace
-    if replace_underscore: function_name = function_name.replace('_', '-')
+    function_name = fn.__name__
 
-    if ensure_present: faas.ensure_fn_present(function_name)
-
-    endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
-
-    def faas_fn(*args, **kwargs) -> Any:
-
-        if verbose: print(f'[INFO]: Requesting at endpoint {endpoint} with data={args}')
-
-        args = __pack_args(args)
-
-        res = requests.get(endpoint, data=args )
-
-        if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
-        if implicit_exception_handling:
-            if res.status_code != 200:
-                raise Exception(f'Function returned non 200 code: {res.status_code}, {res.text}')
+    return __builder(function_name, *args, **kwargs)
 
 
-        r = res.text
-
-        if verbose: print(f'[INFO]: Got contents r={r}')
-        if post_cleanup is not None:
-            r = post_cleanup(res.text)
-
-        if verbose: print(f'[INFO][SUCCESS]: Finished. r={r}, post_cleanup={post_cleanup is not None}')
-
-        if implicit_exception_handling:
-            return r
-        else:
-            return (r, res.status_code)
-
-    faas_fn.__name__ += '_' + function_name
-    return faas_fn
-
-
-def from_faas_str(function_name: str,
-    faas: FaasConnection,
-    namespace: str  = '',
-    ensure_present: bool = True,
-    implicit_exception_handling = True,
-    pack_args: Callable[[Any], str | dict ] = __pack_args,
-    post_cleanup: Callable | None = None,
-    replace_underscore=True,
-    is_auth: bool = False,
-    verbose: bool = False) -> Callable[[Any], Any]:
+def from_faas_str(*args, **kwargs) -> Callable[[Any], Any]:
     """
     Creates an OpenFaaS sync function from a given name
     The decorator method is still recommended. This builder is intended for building functions with a name that already exists
@@ -110,38 +99,4 @@ def from_faas_str(function_name: str,
     
     """
 
-    if replace_underscore: function_name = function_name.replace('_', '-')
-
-    if ensure_present: faas.ensure_fn_present(function_name)
-
-    endpoint = f'http://{faas.auth_address if is_auth else faas.address}/function/{function_name}'
-
-    def faas_fn(*args) -> Any:
-
-        if verbose: print(f'[INFO]: Requesting at endpoint {endpoint} with data={args}')
-
-
-        args = __pack_args(args)
-
-        res = requests.get(endpoint, data=args)
-
-        if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
-        if implicit_exception_handling:
-            if res.status_code != 200:
-                raise Exception(f'Function returned non 200 code: {res.status_code}, {res.text}')
-
-
-        r = res.text
-
-        if verbose: print(f'[INFO]: Got contents r={r}')
-        if post_cleanup is not None:
-            r = post_cleanup(res.text)
-
-        if verbose: print(f'[INFO][SUCCESS]: Finished. r={r}, post_cleanup={post_cleanup is not None}')
-
-        if implicit_exception_handling:
-            return r
-        else:
-            return (r, res.status_code)   
-    
-    return faas_fn
+    return __builder(*args, **kwargs)

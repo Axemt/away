@@ -63,6 +63,7 @@ jobs:
         faas store deploy nodeinfo
         faas store deploy nslookup
         faas store deploy shasum
+        faas store deploy sleep
     - name: Test with unittest
       run: |
         ./tests/run.sh

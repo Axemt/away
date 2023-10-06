@@ -9,8 +9,8 @@ from .common_utils import parametrized
 
 
 def __pack_args(args):
-    # the function should only receive str-type parameters.
-    # TODO: Is there any way to accept multiple type
+    # Arg packing/unpacking is dependent on the template used server-side to build
+    #  the function. Provide this default, stop-gap solution
     if len(args) > 0: args=''.join(args)
 
     return args
@@ -22,6 +22,7 @@ def from_faas_deco(
     namespace: str  = '',
     ensure_present: bool = True,
     implicit_exception_handling = True,
+    pack_args: Callable[[Any], str | dict ] = __pack_args,
     post_cleanup: Callable | None = None,
     replace_underscore=True,
     is_auth: bool = False,
@@ -87,6 +88,7 @@ def from_faas_str(function_name: str,
     namespace: str  = '',
     ensure_present: bool = True,
     implicit_exception_handling = True,
+    pack_args: Callable[[Any], str | dict ] = __pack_args,
     post_cleanup: Callable | None = None,
     replace_underscore=True,
     is_auth: bool = False,

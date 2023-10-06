@@ -1,7 +1,5 @@
 from away import FaasConnection
 
-
-
 import unittest
 class TestConnection(unittest.TestCase):
 

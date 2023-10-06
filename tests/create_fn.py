@@ -102,6 +102,9 @@ class TestCalls(unittest.TestCase):
         res, status = nslookup(host)
         self.assertEqual(status, 200)
 
+        res, status = nslookup_from_str(host)
+        self.assertEqual(status, 200)
+
 
     def test_both_equal(self):
 

@@ -57,7 +57,6 @@ def __builder_sync(function_name: str,
     
     return faas_fn
 
-@parametrized
 def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any], Any]:
     """
     Converts a blank function into an OpenFaaS sync function

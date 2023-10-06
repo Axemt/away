@@ -15,6 +15,7 @@ from .__builder_sync import from_faas_str as sync_from_faas_str
 from .__builder_async import from_faas_str as async_from_faas_str
 
 
+@parametrized
 def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
     """
     Converts a blank function into an OpenFaaS function
@@ -32,8 +33,7 @@ def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], 
         pass
     
     """
-    print(fn)
-    builder_fn = __from_faas_deco_async if not inspect.iscoroutinefunction(fn) else __from_faas_deco_sync
+    builder_fn = __from_faas_deco_async if inspect.iscoroutinefunction(fn) else __from_faas_deco_sync
 
     return builder_fn(fn, *args, **kwargs)
 

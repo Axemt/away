@@ -45,7 +45,6 @@ def __builder_async(function_name: str,
 
 
 
-@parametrized
 def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Awaitable:
     """
     Converts a blank function into an OpenFaaS async function

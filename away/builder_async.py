@@ -1,6 +1,5 @@
 
 import requests
-from requests_futures.sessions import FuturesSession
 import asyncio
 from .FaasConnection import FaasConnection
 
@@ -46,10 +45,7 @@ def __builder(function_name: str,
 
 
 @parametrized
-def from_faas_deco(
-    fn: Callable[[str], None],
-    *args, **kwargs
-    ) -> Awaitable:
+def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Awaitable:
     """
     Converts a blank function into an OpenFaaS async function
 

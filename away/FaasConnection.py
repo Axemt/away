@@ -1,6 +1,7 @@
 
 import requests
 from requests.exceptions import ConnectionError
+import subprocess
 
 class FaasConnection():
 
@@ -17,14 +18,21 @@ class FaasConnection():
         has_user = user is not None
         has_password = password is not None
         if has_user and has_password:
+            # TODO: Make this safe
             auth_details = f'{user}:{password}@'
+            self.__cli_login(user, password)
         else:
             if has_password != has_user:
                 print('[WARN]: Only one of [user, password] present, but not the other. auth will be blank')
-            auth_details = ''
+            auth_details = None
 
         self.auth = auth_details
-        self.auth_address = f'{auth_details}{self.address}'
+        self.auth_address = f'{auth_details}{self.address}' if auth_details is not None else None
+
+    def __cli_login(self, user, password):
+        subprocess.run(
+            ['faas', 'login', '--gateway', f'http://{self.address}', '-u', str(user), '-p', str(password)],
+        )
 
     def __repr__(self) -> str:
         is_available = True
@@ -91,6 +99,13 @@ class FaasConnection():
         """
 
         if not self.check_fn_present(fn_name):
-            raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}')
+            raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}') 
 
-        
+    def is_auth(self) -> bool:
+        return self.auth_address is not None
+    
+    def ensure_auth(self) -> bool:
+        if not self.is_auth():
+            raise Exception(f'OpenFaaS connection is not auth:\n{self}')
+
+    

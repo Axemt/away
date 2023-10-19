@@ -12,38 +12,33 @@ class FaasConnection():
         password: str = None,
         ensure_available: bool = True):
 
-        self.address = f'{provider}:{port}' 
+        self.address = f'{provider}:{port}'
+        self.auth_address = None
+
         if ensure_available: self.ensure_available()
 
         has_user = user is not None
         has_password = password is not None
         if has_user and has_password:
             # TODO: Make this safe
-            auth_details = f'{user}:{password}@'
-            self.__cli_login(user, password)
+            if ensure_available:
+                self.__cli_login(user, password)
         else:
             if has_password != has_user:
                 print('[WARN]: Only one of [user, password] present, but not the other. auth will be blank')
-            auth_details = None
-
-        self.auth = auth_details
-        self.auth_address = f'{auth_details}{self.address}' if auth_details is not None else None
 
     def __cli_login(self, user, password):
+        self.auth_address = f'{user}:{password}@{self.address}'
         subprocess.run(
             ['faas', 'login', '--gateway', f'http://{self.address}', '-u', str(user), '-p', str(password)],
+            check=True
         )
 
     def __repr__(self) -> str:
-        is_available = True
-        try:
-            self.ensure_available()
-        except:
-            is_available = False
 
         return f'''FaasConnection at endpoint: {self.address};
-        Auth details: {"Not present" if self.auth == "" else "Present"};
-        Is Available: {is_available}'''
+        Auth details: {"Not logged in" if self.auth_address is None else "Logged in"};
+        Is Available: {self.is_available()}'''
 
     def ensure_available(self):
         try:
@@ -54,6 +49,13 @@ class FaasConnection():
             is_local = 'localhost' in self.address or '127.0.0.1' in self.address
 
             raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
+
+    def is_available(self):
+        try:
+            self.ensure_available()
+            return True
+        except:
+            return False
 
     def get_faas_functions(self) -> [str]:
         """

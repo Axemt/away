@@ -6,15 +6,19 @@ class TestConnection(unittest.TestCase):
     def test_constructs(self):
         faas = FaasConnection(ensure_available=False, password=131623564)
 
+    def test_isauth(self):
+        faas = FaasConnection(ensure_available=False)
+        self.assertFalse(faas.is_auth())
+
     def test_repr(self):
         faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False)
 
-        self.assertEqual('FaasConnection at endpoint: lettuce:8080;\n        Auth details: Present;\n        Is Available: False', str(faas))
+        self.assertEqual('FaasConnection at endpoint: lettuce:8080;\n        Auth details: Not logged in;\n        Is Available: False', str(faas))
 
     def test_repr_noleak(self):
         password='mysecret'
         user= 'myuser'
-        faas = FaasConnection(password=password,user=user)
+        faas = FaasConnection(password=password,user=user, ensure_available=False)
 
         self.assertTrue(password not in str(faas))
         self.assertTrue(user not in str(faas))

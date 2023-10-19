@@ -28,6 +28,9 @@ class FaasConnection():
                 print('[WARN]: Only one of [user, password] present, but not the other. auth will be blank')
 
     def __cli_login(self, user, password):
+        """
+        Authenticates with the OpenFaaS server via CLI
+        """
         subprocess.run(
             ['faas', 'login', '--gateway', f'http://{self.address}', '-u', str(user), '-p', str(password)],
             check=True
@@ -41,6 +44,9 @@ class FaasConnection():
         Is Available: {self.is_available()}'''
 
     def ensure_available(self):
+        """
+        Attempts to check health of the OpenFaaS server, and raises an exception if it is unavailable
+        """
         try:
             r = requests.get(f'http://{self.address}/healthz')
             if r.status_code != 200:
@@ -50,7 +56,10 @@ class FaasConnection():
 
             raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
 
-    def is_available(self):
+    def is_available(self) -> bool:
+        """
+        Checks health of the OpenFaaS server, returning `True` if the server is available and responding and `False` otherwise
+        """
         try:
             self.ensure_available()
             return True
@@ -104,9 +113,15 @@ class FaasConnection():
             raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}') 
 
     def is_auth(self) -> bool:
+        """
+        Checks if this FaasConnection is authenticated, returning `True` if it is and `False` otherwise
+        """
         return self.auth_address is not None
     
-    def ensure_auth(self) -> bool:
+    def ensure_auth(self):
+        """
+        Checks if this FaasConnection is authenticated and raises an exception if not
+        """
         if not self.is_auth():
             raise Exception(f'OpenFaaS connection is not auth:\n{self}')
 

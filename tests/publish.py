@@ -23,6 +23,7 @@ def sum_all_numbers(l):
 
     return res
 
+SOME_GLOBAL_VAR = 346234624562
 
 import unittest
 class TestCalls(unittest.TestCase):
@@ -77,6 +78,25 @@ class TestCalls(unittest.TestCase):
         
         self.assertEqual(res, sum(l))
 
+    def test_with_outside_scope(self):
+
+        nonlocal_var = 234562356256
+
+        @builder.publish(faas, verbose=True)
+        def return_the_nonlocal():
+            return nonlocal_var
+
+        res = return_the_nonlocal()
+        self.assertEqual(res, nonlocal_var)
+
+    def test_with_global_scope(self):
+
+        @builder.publish(faas, verbose=True)
+        def return_the_global():
+            return SOME_GLOBAL_VAR
+
+        res = return_the_global()
+        self.assertEqual(res, SOME_GLOBAL_VAR)
 
 if __name__ == '__main__':
     unittest.main()

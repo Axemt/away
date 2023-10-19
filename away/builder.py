@@ -30,6 +30,9 @@ HANDLER_TEMPLATE = '''
 # Wrapped to-publish function
 {}
 
+# Captured globals at build time
+{}
+
 EXPECTED_LEN_OF_ARGS = {}
 
 def handle(req):
@@ -61,8 +64,20 @@ def __client_pack_args(it: Iterable): return yaml.safe_dump(it)
 def __client_post_cleanup(st: str): return yaml.safe_load(st)
 
 def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) -> str:
-
+    """
+    Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
+    """
     fn_args = inspect.getfullargspec(source_fn)[0]
+    captured_vars = inspect.getclosurevars(source_fn)
+    captured_vars_txt = ''
+
+    for group in [captured_vars.nonlocals, captured_vars.globals]:
+        for k, v in group.items():
+            captured_vars_txt += f'{k} = {v}\n'
+
+    if captured_vars_txt != '':
+        print(f'[WARN]: Use of variables outside function scope in function body. These will be statically assigned to the current values ({captured_vars}) because OpenFaaS functions are stateless') 
+
     fn_args_n = len(fn_args)
     fn_arg_names = ', '.join(fn_args)
     # format accordingly
@@ -91,14 +106,13 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) ->
     source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))
     
     source_fn_txt = '\n'.join(source_fn_arr)
-
-    
     
     handler = HANDLER_TEMPLATE.format(
         version('away'),
         ctime(),
         inspect.getsource(server_unpack_args).replace('\t\t',''),
         source_fn_txt,
+        captured_vars_txt,
         fn_args_n,
         server_unpack_args.__name__,
         fn_arg_names,

@@ -46,11 +46,13 @@ jobs:
       
     - name: Deploy FaaS
       run: |
+        minikube addons enable registry
         git clone https://github.com/openfaas/faas-netes/
         minikube kubectl -- apply -f faas-netes/namespaces.yml
         minikube kubectl -- apply -f faas-netes/yaml
         minikube kubectl -- create secret generic basic-auth -n openfaas --from-literal=basic-auth-user=admin --from-literal=basic-auth-password=1234
         minikube kubectl -- wait pod --all --for=condition=Ready --namespace=openfaas --timeout=120s
+        minikube kubectl -- port-forward svc/registry 5000:80 -n kube-system &
         minikube kubectl -- port-forward svc/gateway 8080:8080 -n openfaas &
     - name: Set-up faas-cli
       run: |

@@ -71,4 +71,5 @@ jobs:
     - name: Test with unittest
       run: |
         # workaround because __cli_login's cannot correctly log in
+        faas login --username admin --password 1234
         ./tests/run.sh

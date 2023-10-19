@@ -5,6 +5,8 @@ import typing
 from typing import Callable, Any, Awaitable, Tuple, Iterable
 
 import inspect
+from importlib.metadata import version
+from time import ctime
 import yaml
 import subprocess
 import os
@@ -20,6 +22,8 @@ from .__builder_async import from_faas_str as async_from_faas_str
 from .FaasConnection import FaasConnection
 
 HANDLER_TEMPLATE = '''
+# Built with Away version {} on {}
+
 # Args unpacker
 {}
     
@@ -91,6 +95,8 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) ->
     
     
     handler = HANDLER_TEMPLATE.format(
+        version('away'),
+        ctime(),
         inspect.getsource(server_unpack_args).replace('\t\t',''),
         source_fn_txt,
         fn_args_n,
@@ -172,7 +178,7 @@ def publish(
         )
 
         # TODO: handle possible imports in function?
-
+        # TODO: handle variables used in function but defined outside
 
         # Create unpacker
         if server_unpack_args is None:

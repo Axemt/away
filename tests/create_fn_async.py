@@ -53,6 +53,8 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
         self.assertTrue( time() - t > 2)
 
     async def test_noawait(self):
+        # ending a function when futures are still running raises a warning. this is intentional by the test's design
+        warnings.filterwarnings('ignore')
         t = time()
 
         sleep()
@@ -60,6 +62,7 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
         sleep()
 
         self.assertTrue( time() - t < 2 )
+        warnings.filterwarnings('default')
 
     async def test_results(self):
         

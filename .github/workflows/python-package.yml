@@ -69,4 +69,5 @@ jobs:
         faas store deploy nmap
     - name: Test with unittest
       run: |
+        # workaround because __cli_login's cannot correctly log in
         ./tests/run.sh

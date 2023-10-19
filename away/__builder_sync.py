@@ -34,6 +34,8 @@ def __builder_sync(function_name: str,
 
         args = pack_args(args)
 
+        if verbose: print(f'[INFO]: Packed args: {args}')
+
         res = requests.get(endpoint, data=args)
 
         if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')

@@ -31,6 +31,8 @@ def __builder_async(function_name: str,
 
         args = pack_args(args)
 
+        if verbose: print(f'[INFO]: Packed args: {args}')
+
         start_get = lambda: post_cleanup(requests.get(endpoint, data=args).text)
 
         res_fut = asyncio.to_thread(start_get)

@@ -28,11 +28,11 @@ class FaasConnection():
                 print('[WARN]: Only one of [user, password] present, but not the other. auth will be blank')
 
     def __cli_login(self, user, password):
-        self.auth_address = f'{user}:{password}@{self.address}'
         subprocess.run(
             ['faas', 'login', '--gateway', f'http://{self.address}', '-u', str(user), '-p', str(password)],
             check=True
         )
+        self.auth_address = f'{user}:{password}@{self.address}'
 
     def __repr__(self) -> str:
 

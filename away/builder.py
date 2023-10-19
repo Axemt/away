@@ -135,6 +135,21 @@ def publish(
     server_unpack_args: Callable[[Any], Tuple] | None = None,
     **kwargs
 ):
+    """
+    Publishes the wrapped function to an OpenFaaS server
+
+    This also creates a function proxy at the client, with the same properties of the wrapped function (i.e: async/sync)
+
+    Usage:
+
+    @builder.publish(faas)
+    def fibbonacci(n):
+        if n in [0,1]: 
+            return n
+        return fibbonacci(n-1) + fibbonacci(n-2)
+
+    
+    """
     
     fn_name = fn.__name__.replace('_','-')
     
@@ -180,7 +195,7 @@ def publish(
 
         # Publish with faas cli
         subprocess.run(
-            ['faas', 'up', '--gateway', f'http://{faas.auth_address}', '--yaml', f'{fn_name}.yml'],
+            ['faas', 'up', '--gateway', f'http://{faas.address}', '--yaml', f'{fn_name}.yml'],
             check=True
         )
 

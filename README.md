@@ -6,6 +6,7 @@ A python library to create local functions of OpenFaaS functions, allowing their
 
 ## Usage
 
+### Obtaining local proxies
 Get or build a function proxy to an OpenFaaS function. For example, for a `fibonacci` function deployed in OpenFaaS:
 
 1. Create a `FaasConnection`:
@@ -49,6 +50,34 @@ def fibonacci(name):
 
 fibonacci(10) # returns (55, 200)
 ```
+
+### Building and pushing to server
+You can also push a self-contained function to an OpenFaaS server with `builder.publish`. You must be logged in to the FaaS server with enough privileges to deploy functions:
+
+```python
+faas = FaasConnection(password=1234)
+
+@builder.publish(faas) # builds a function container and pushes it to the `faas` server
+def sum_two_numbers(A,B):
+	return A + B
+
+res = sum_two_numbers(1,2) # executes in the OpenFaaS server and returns 3
+```
+
+The decorator creates also a local proxy to call the newly published function locally. The proxy has the same characteristics as the defined function (i.e: async/sync)
+
+```python
+@builder.publish(faas)
+async sum_all_numbers(l):
+	res = 0
+	for n in l:
+		res = res + n
+
+	return res
+
+await sum_all_numbers([1,2,3,4]) # async-calls the function and returns 10
+```
+
 ## Installation
 
 To install as a pip package run `python -m pip install .` from away’s main directory

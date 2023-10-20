@@ -20,7 +20,7 @@ def cows():
     pass
 
 @builder.faas_function(faas, 
-    post_cleanup=lambda e: e.strip().replace(' ','').replace('-',''), 
+    unpack_args=lambda e: e.strip().replace(' ','').replace('-',''), 
     verbose=True
 )
 def shasum(something_to_sha):
@@ -50,7 +50,7 @@ def nslookup(host):
 
 shasum_from_str = builder.sync_from_faas_str('shasum',
         faas,
-        post_cleanup=lambda e: e.strip().replace(' ','').replace('-',''),
+        unpack_args=lambda e: e.strip().replace(' ','').replace('-',''),
         verbose=True
     )
 
@@ -78,7 +78,7 @@ class TestCalls(unittest.TestCase):
         res, status = cows()
         self.assertEqual(status, 200)
 
-    def test_with_cleanup(self):
+    def test_with_unpack(self):
         s = 'hello'
         res_faas = shasum(s)
         res_local = sha512(str.encode(s)).hexdigest()

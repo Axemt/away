@@ -13,7 +13,7 @@ def __builder_async(function_name: str,
     namespace: str  = '',
     ensure_present: bool = True,
     pack_args: Callable[[Any], str | dict ] = pack_args,
-    post_cleanup: Callable = lambda e: e,
+    unpack_args: Callable = lambda e: e,
     replace_underscore=True,
     is_auth: bool = False,
     verbose: bool = False) -> Awaitable:
@@ -33,7 +33,7 @@ def __builder_async(function_name: str,
 
         if verbose: print(f'[INFO]: Packed args: {args}')
 
-        start_get = lambda: post_cleanup(requests.get(endpoint, data=args).text)
+        start_get = lambda: unpack_args(requests.get(endpoint, data=args).text)
 
         res_fut = asyncio.to_thread(start_get)
 

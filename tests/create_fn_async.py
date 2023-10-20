@@ -20,9 +20,9 @@ async def nmap(domain):
     pass
 
 
-shasum_cleanup = lambda e: e.strip().replace(' ','').replace('-','')
+shasum_unpack = lambda e: e.strip().replace(' ','').replace('-','')
 @builder.faas_function(faas,
-    post_cleanup=shasum_cleanup,
+    unpack_args=shasum_unpack,
     verbose=True
 )
 async def shasum(s):
@@ -31,7 +31,7 @@ async def shasum(s):
 shasum_faas_sync = builder.sync_from_faas_str('shasum',
     faas, 
     verbose=True, 
-    post_cleanup=shasum_cleanup
+    unpack_args=shasum_unpack
 )
 
 sleep_faas_async = builder.async_from_faas_str('sleep', faas, verbose=True)

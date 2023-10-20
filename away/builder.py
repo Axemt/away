@@ -61,7 +61,7 @@ def __server_unpack_args(req):
 
 def __client_pack_args(it: Iterable): return yaml.safe_dump(it)
 
-def __client_post_cleanup(st: str): return yaml.safe_load(st)
+def __client_unpack_args(st: str): return yaml.safe_load(st)
 
 def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) -> str:
     """
@@ -201,7 +201,7 @@ def publish(
 
             client_pack_args = __client_pack_args
 
-            client_post_cleanup = __client_post_cleanup
+            client_unpack_args = __client_unpack_args
 
             with open(f'{fn_name}/requirements.txt', 'a') as requirements:
                 requirements.write('pyyaml')
@@ -234,6 +234,6 @@ def publish(
     else:
         create_fn = sync_from_faas_str
 
-    fn = create_fn(fn_name, faas, pack_args=client_pack_args, post_cleanup=client_post_cleanup, **kwargs)
+    fn = create_fn(fn_name, faas, pack_args=client_pack_args, unpack_args=client_unpack_args, **kwargs)
 
     return fn

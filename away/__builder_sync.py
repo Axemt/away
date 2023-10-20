@@ -15,7 +15,7 @@ def __builder_sync(function_name: str,
     ensure_present: bool = True,
     implicit_exception_handling = True,
     pack_args: Callable[[Any], str | dict ] = pack_args,
-    post_cleanup: Callable | None = None,
+    unpack_args: Callable | None = None,
     replace_underscore=True,
     is_auth: bool = False,
     verbose: bool = False) -> Callable[[Any], Any]:
@@ -47,10 +47,10 @@ def __builder_sync(function_name: str,
         r = res.text
 
         if verbose: print(f'[INFO]: Got contents r={r}')
-        if post_cleanup is not None:
-            r = post_cleanup(r)
+        if unpack_args is not None:
+            r = unpack_args(r)
 
-        if verbose: print(f'[INFO][SUCCESS]: Finished. r={r}, post_cleanup={post_cleanup is not None}')
+        if verbose: print(f'[INFO][SUCCESS]: Finished. r={r}, unpack_args={unpack_args is not None}')
 
         if implicit_exception_handling:
             return r

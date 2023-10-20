@@ -23,7 +23,11 @@ def sum_all_numbers(l):
 
     return res
 
+# requirement for `test_with_global_scope`
 SOME_GLOBAL_VAR = 346234624562
+
+client_pack_args = builder.__client_pack_args
+client_unpack_args = builder.__client_unpack_args
 
 import unittest
 class TestCalls(unittest.TestCase):
@@ -97,6 +101,14 @@ class TestCalls(unittest.TestCase):
 
         res = return_the_global()
         self.assertEqual(res, SOME_GLOBAL_VAR)
+    
+    def test_compatible_with_from_str(self):
+
+        sum_one_but_from_str = builder.sync_from_faas_str('sum_one', faas, pack_args=client_pack_args, unpack_args=client_unpack_args, verbose=True)
+
+        self.assertEqual(sum_one(0), 1)
+        self.assertEqual(sum_one_but_from_str(0), 1)
+        self.assertEqual(sum_one_but_from_str(0), sum_one(0))
 
 if __name__ == '__main__':
     unittest.main()

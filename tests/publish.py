@@ -26,6 +26,7 @@ def sum_all_numbers(l):
 # requirement for `test_with_global_scope`
 SOME_GLOBAL_VAR = 346234624562
 
+# requirement for `test_compatible_from_str`
 client_pack_args = builder.__client_pack_args
 client_unpack_args = builder.__client_unpack_args
 

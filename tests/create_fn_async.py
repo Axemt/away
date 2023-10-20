@@ -86,6 +86,13 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
         await sleep_faas_async()
         self.assertTrue(time() - t > 2)
 
+    async def test_exceptions(self):
+
+        nmap_with_except = builder.async_from_faas_str('nmap', faas, verbose=True, implicit_exception_handling=False)
+
+        res, status = await nmap_with_except('upv.es')
+        self.assertEqual(status, 200)
+
 
 if __name__ == '__main__':
     unittest.main()

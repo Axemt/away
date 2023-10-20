@@ -12,6 +12,7 @@ def __builder_async(function_name: str,
     faas: FaasConnection,
     namespace: str  = '',
     ensure_present: bool = True,
+    implicit_exception_handling: bool = True,
     pack_args: Callable[[Any], str | dict ] = pack_args,
     unpack_args: Callable = lambda e: e,
     replace_underscore=True,
@@ -33,7 +34,20 @@ def __builder_async(function_name: str,
 
         if verbose: print(f'[INFO]: Packed args: {args}')
 
-        start_get = lambda: unpack_args(requests.get(endpoint, data=args).text)
+        def start_get():
+            res = requests.get(endpoint, data=args)
+
+            if verbose: 
+                print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
+            if implicit_exception_handling:
+                if res.status_code != 200:
+                    raise Exception(f'Function returned non 200 code: {res.status_code}, {res.text}')
+            r = res.text
+            if unpack_args is not None:
+                r = unpack_args(r)
+
+            return r if implicit_exception_handling else (r, res.status_code)
+
 
         res_fut = asyncio.to_thread(start_get)
 

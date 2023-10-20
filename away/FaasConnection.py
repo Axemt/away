@@ -3,6 +3,8 @@ import requests
 from requests.exceptions import ConnectionError
 import subprocess
 
+import warnings
+
 class FaasConnection():
 
     def __init__(self,
@@ -25,7 +27,7 @@ class FaasConnection():
                 self.__cli_login(user, password)
         else:
             if has_password != has_user:
-                print('[WARN]: Only one of [user, password] present, but not the other. auth will be blank')
+                warnings.warn('Only one of [user, password] present, but not the other. auth will be blank', Warning)
 
     def __cli_login(self, user, password):
         """

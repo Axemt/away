@@ -4,6 +4,8 @@ import requests
 import typing
 from typing import Callable, Any, Awaitable, Tuple, Iterable
 
+import warnings
+
 import inspect
 from importlib.metadata import version
 from time import ctime
@@ -30,7 +32,7 @@ HANDLER_TEMPLATE = '''
 # Wrapped to-publish function
 {}
 
-# Captured globals at build time
+# Captured variables at build time
 {}
 
 EXPECTED_LEN_OF_ARGS = {}
@@ -72,14 +74,14 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) ->
     captured_vars_txt = ''
 
     if len(captured_vars.unbound) > 0:
-        print(f'The function {source_fn.__name__} contains unbound variables ({captured_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.')
+        warngins.warn(f'The function {source_fn.__name__} contains unbound variables ({captured_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
 
     for group in [captured_vars.nonlocals, captured_vars.globals]:
         for k, v in group.items():
             captured_vars_txt += f'{k} = {v}\n'
 
     if captured_vars_txt != '':
-        print(f'[WARN]: Use of variables outside function scope in function body. These will be statically assigned to the current values ({captured_vars}) because OpenFaaS functions are stateless') 
+        warnings.warn(f'[WARN]: Use of variables outside function scope in function body. These will be statically assigned to the current values ({captured_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
 
     fn_args_n = len(fn_args)
     fn_arg_names = ', '.join(fn_args)

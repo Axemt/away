@@ -41,7 +41,7 @@ fibonacci_with_a_different_name = builder.sync_from_faas_str(’fibonacci’, fa
 fibonacci_with_a_different_name(55) # returns 139583862445
 ```
 
-If you wish to handle errors in the FaaS functions manually you can use the option `implicit_exception_handling=False` to make the function return the status code alongside the response. Otherwise, the function raises an exception. This is only applicable to sync functions
+If you wish to handle errors in the FaaS functions manually you can use the option `implicit_exception_handling=False` to make the function return the status code alongside the response. Otherwise, the function raises an exception.
 
 ```python
 @builder.faas_function(faas, implicit_exception_handling=False)

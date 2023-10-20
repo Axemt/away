@@ -71,6 +71,9 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) ->
     captured_vars = inspect.getclosurevars(source_fn)
     captured_vars_txt = ''
 
+    if len(captured_vars.unbound) > 0:
+        print(f'The function {source_fn.__name__} contains unbound variables ({captured_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.')
+
     for group in [captured_vars.nonlocals, captured_vars.globals]:
         for k, v in group.items():
             captured_vars_txt += f'{k} = {v}\n'

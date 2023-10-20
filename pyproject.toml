@@ -19,6 +19,5 @@ classifiers = [
 dependencies = [
 	'requests',
     'asyncio',
-    'safeserializer[full]',
     'pyyaml'
 ]

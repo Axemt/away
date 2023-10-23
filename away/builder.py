@@ -51,7 +51,9 @@ def handle(req):
     return {}({})
     '''
 
-def __server_unpack_args(req):
+# Functions are defined as separate implementation to avoid including extra information
+#  and checks in the published function
+def __safe_server_unpack_args(req):
     import yaml
     args =  yaml.safe_load(req)
     if len(args)==1:
@@ -61,9 +63,22 @@ def __server_unpack_args(req):
 
     return args, len(args)
 
-def __client_pack_args(it: Iterable): return yaml.safe_dump(it)
+def __unsafe_server_unpack_args(req):
+    import yaml
+    # uses pyyaml's unsafe Loader
+    args =  yaml.load(req, Loader=yaml.Loader)
+    if len(args)==1:
+        return args[0], 1
+    if len(args)==0:
+        return None, 0
 
-def __client_unpack_args(st: str): return yaml.safe_load(st)
+    return args, len(args)
+
+def __make_client_pack_args(safe_args: bool) -> Callable[[Iterable[Any]], str]: 
+    return (lambda it: yaml.safe_dump(it)) if safe_args else (lambda it: yaml.dump(it))
+
+def __make_client_unpack_args(safe_args: bool) -> Callable[[str], Tuple[Any]]: 
+    return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
 
 def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) -> str:
     """
@@ -199,14 +214,16 @@ def publish(
         # TODO: handle possible imports in function?
         # TODO: handle variables used in function but defined outside
 
-        # Create unpacker
+        # Create unpacker if not provided
         if server_unpack_args is None:
+            if not safe_args:
+                warnings.warn('"safe_args"=False; This may expose your OpenFaaS instance to malicious requests through python\'s "pickle" module. See {https://docs.python.org/3/library/pickle.html} for details')
             # Establish 'protocol': serialize and then back
-            server_unpack_args = __server_unpack_args
+            server_unpack_args = __safe_server_unpack_args if safe_args else __unsafe_server_unpack_args
 
-            client_pack_args = __client_pack_args
+            client_pack_args = __make_client_pack_args(safe_args)
 
-            client_unpack_args = __client_unpack_args
+            client_unpack_args = __make_client_unpack_args(safe_args)
 
             with open(f'{fn_name}/requirements.txt', 'a') as requirements:
                 requirements.write('pyyaml')

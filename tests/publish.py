@@ -1,5 +1,6 @@
 from away import builder, FaasConnection
 import asyncio
+from yaml.representer import RepresenterError
 
 faas = FaasConnection(password='1234')
 
@@ -27,8 +28,8 @@ def sum_all_numbers(l):
 SOME_GLOBAL_VAR = 346234624562
 
 # requirement for `test_compatible_from_str`
-client_pack_args = builder.__client_pack_args
-client_unpack_args = builder.__client_unpack_args
+client_pack_args = builder.__make_client_pack_args(True)
+client_unpack_args = builder.__make_client_unpack_args(True)
 
 import unittest
 class TestCalls(unittest.TestCase):
@@ -110,6 +111,22 @@ class TestCalls(unittest.TestCase):
         self.assertEqual(sum_one(0), 1)
         self.assertEqual(sum_one_but_from_str(0), 1)
         self.assertEqual(sum_one_but_from_str(0), sum_one(0))
+
+    def test_with_unsafe_args(self):
+
+        @builder.publish(faas, safe_args=False, verbose=True)
+        def sum_from_range(rg):
+            res = 0
+            for n in rg:
+                res = res + n
+
+            return res
+
+        unsafe_arg = range(10)
+        # a Range object is not normally safely unpackable
+        self.assertEqual( sum_from_range(unsafe_arg), 45 ) 
+        # The same function built with the default safe_args raises an error
+        self.assertRaises( RepresenterError, sum_all_numbers, unsafe_arg )     
 
 if __name__ == '__main__':
     unittest.main()

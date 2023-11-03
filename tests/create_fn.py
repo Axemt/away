@@ -6,31 +6,15 @@ import inspect
 faas = FaasConnection(password='1234')
 
 fn_names = faas.get_faas_functions()
-assert 'cows' in fn_names, 'This test needs function \'cows\' available in FaaS'
 assert 'shasum' in fn_names, 'This test needs function \'shasum\' available in FaaS'
-assert 'nodeinfo' in fn_names, 'This test needs function \'nodeinfo\' available in FaaS'
 assert 'env' in fn_names, 'This test needs function \'env\' available in FaaS'
 assert 'nslookup' in fn_names, 'This test needs function \'nslookup\' available in FaaS'
-
-@builder.faas_function(faas, 
-    implicit_exception_handling=False,
-    verbose=True
-)
-def cows():
-    pass
 
 @builder.faas_function(faas, 
     unpack_args=lambda e: e.strip().replace(' ','').replace('-',''), 
     verbose=True
 )
 def shasum(something_to_sha):
-    pass
-
-@builder.faas_function(faas,
-    implicit_exception_handling=False,
-    verbose=True
-)
-def nodeinfo():
     pass
 
 
@@ -75,7 +59,7 @@ class TestCalls(unittest.TestCase):
         self.assertTrue( not inspect.iscoroutinefunction(shasum))
 
     def test_plain(self):
-        res, status = cows()
+        res, status = env()
         self.assertEqual(status, 200)
 
     def test_with_unpack(self):
@@ -90,8 +74,6 @@ class TestCalls(unittest.TestCase):
         self.assertEqual(res_faas,res_local)
 
     def test_noargs(self):
-        res, status = nodeinfo()
-        self.assertEqual(status, 200)
 
         res, status = env()
         self.assertEqual(status, 200)

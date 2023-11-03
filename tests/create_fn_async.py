@@ -15,10 +15,6 @@ assert 'shasum' in fn_names, 'This test needs function \'shasum\' available in F
 async def sleep(): # sleeps for 2s
     pass
 
-@builder.faas_function(faas, verbose=True)
-async def nmap(domain):
-    pass
-
 
 shasum_unpack = lambda e: e.strip().replace(' ','').replace('-','')
 @builder.faas_function(faas,
@@ -88,9 +84,8 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
 
     async def test_exceptions(self):
 
-        nmap_with_except = builder.async_from_faas_str('nmap', faas, verbose=True, implicit_exception_handling=False)
-
-        res, status = await nmap_with_except('upv.es')
+        shasum_with_exceptions = builder.async_from_faas_str('shasum', faas, verbose=True, implicit_exception_handling=False, unpack_args=shasum_unpack)
+        _, status = await shasum_with_exceptions('hello')
         self.assertEqual(status, 200)
 
 

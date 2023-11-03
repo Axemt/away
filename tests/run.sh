@@ -1,9 +1,7 @@
 python3 -m pip install .
 
-python3 tests/connection.py
 
-python3 tests/create_fn.py
-python3 tests/create_fn_async.py
+coverage run --source away/ -m unittest discover -s tests -p '*.py'
 
-python3 tests/publish.py
-python3 tests/mirror_in_faas.py
+
+coverage report -m

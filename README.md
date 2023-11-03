@@ -6,8 +6,8 @@ A python library to create local functions of OpenFaaS functions, allowing their
 
 ## Usage
 
-### Obtaining local proxies
-Get or build a function proxy to an OpenFaaS function. For example, for a `fibonacci` function deployed in OpenFaaS:
+### Using existing functions
+Get or build a function proxy to an existing OpenFaaS function. For example, for a `fibonacci` function deployed in OpenFaaS:
 
 1. Create a `FaasConnection`:
 ```python
@@ -51,8 +51,8 @@ def fibonacci(name):
 fibonacci(10) # returns (55, 200)
 ```
 
-### Building and pushing to server
-You can also push a self-contained function to an OpenFaaS server with `builder.publish`. You must be logged in to the FaaS server with enough privileges to deploy functions:
+### Build and deploy your own functions programatically
+You can also push a function to an OpenFaaS server with `builder.publish`. You must be logged in to the FaaS server with enough privileges to deploy functions:
 
 ```python
 faas = FaasConnection(password=1234)
@@ -63,6 +63,7 @@ def sum_two_numbers(A,B):
 
 res = sum_two_numbers(1,2) # executes in the OpenFaaS server and returns 3
 ```
+__Note__: If the function uses any values outside of the scope, they will be captured with their current values and published as part of the function. This is useful for constant values, but has the limitation that it can obviously not modify them in the outside scope. 
 
 The decorator creates also a local proxy to call the newly published function locally. The proxy has the same characteristics as the defined function (i.e: async/sync)
 
@@ -78,7 +79,7 @@ async def sum_all_numbers(l):
 await sum_all_numbers([1,2,3,4]) # async-calls the function and returns 10
 ```
 
-if you would like to still have a local copy of the function, for example to offload the function to OpenFaaS when the load on the client gets high, use `builder.mirror_in_faas`. Like with `builder.publish`, the published function will retain sync/async characteristics
+If you would like to still have a local copy of the function, for example to offload the function to OpenFaaS when the load on the client gets high, use `builder.mirror_in_faas`. Like with `builder.publish`, the published function will retain sync/async characteristics
 
 ```python
 secret = 123
@@ -89,6 +90,18 @@ add_secret_in_faas = builder.mirror_in_faas(add_secret, faas)
 
 add_secret(1) # Executes the function locally and returns 124
 add_secret_in_faas(1) # Executes the function in OpenFaaS and returns 124
+```
+
+Away includes a lightweight serialization-deserialization protocol to communicate with published functions based on `pyyaml`. By default, it only allows the use of safely unpickle-able objects. To use values that require unsafe, `pickle`-based serialization, use the kwarg `safe_args`:
+__Note__: Non-builtin objects are not currently supported at the moment due to being unable to determine the type of the arg and to find the source to include.
+
+```python
+@builder.publish(faas, safe_args=False):
+def use_unsafe_arg(rang):
+	res = 0
+	for i in rang:
+		res += i
+	return res
 ```
 
 ## Installation

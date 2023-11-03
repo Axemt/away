@@ -80,7 +80,7 @@ def __make_client_pack_args(safe_args: bool) -> Callable[[Iterable[Any]], str]:
 def __make_client_unpack_args(safe_args: bool) -> Callable[[str], Tuple[Any]]: 
     return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
 
-def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) -> str:
+def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
     """
@@ -109,8 +109,8 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable) ->
 
     source_fn_arr = inspect.getsource(source_fn).split('\n')
     
-    # skip line containing decorator
-    source_fn_arr.pop(0)
+    # skip line containing decorator, if it is decorated
+    if __from_deco: source_fn_arr.pop(0)
 
     # check if function is marked as async in source
     source_marked_async = source_fn_arr[0].find('async') != -1
@@ -164,10 +164,9 @@ def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], 
 
     return builder_fn(fn, *args, **kwargs)
 
-
 @parametrized
 def publish( 
-    fn: Callable, 
+    fn: Callable[[Any], Any], 
     faas: FaasConnection,
     registry_prefix: str ='localhost:5000', 
     safe_args: bool = True,
@@ -179,7 +178,6 @@ def publish(
     Publishes the wrapped function to an OpenFaaS server
 
     This also creates a function proxy at the client, with the same properties of the wrapped function (i.e: async/sync)
-
     Usage:
 
     @builder.publish(faas)
@@ -188,6 +186,33 @@ def publish(
             return n
         return fibbonacci(n-1) + fibbonacci(n-2)
 
+    
+    """
+    
+    return mirror_in_faas(fn, faas, registry_prefix, safe_args, enable_dev_building, server_unpack_args, __from_deco=True, **kwargs)
+
+
+def mirror_in_faas( 
+    fn: Callable[[Any], Any], 
+    faas: FaasConnection,
+    registry_prefix: str ='localhost:5000', 
+    safe_args: bool = True,
+    enable_dev_building: bool = False,
+    server_unpack_args: Callable[[Any], Tuple] | None = None,
+    __from_deco: bool = False,
+    **kwargs
+) -> Callable[[Any], Any]:
+    """
+    Mirrors a given function in an OpenFaaS server, and returns a proxy
+
+    Usage:
+
+    def fibbonacci(n):
+        if n in [0,1]: 
+            return n
+        return fibbonacci(n-1) + fibbonacci(n-2)
+
+    fibbonacci_mirrored_in_faas = mirror_in_faas(fibbonacci, faas)
     
     """
     
@@ -229,7 +254,7 @@ def publish(
                 requirements.write('pyyaml')
 
         # Create handler
-        handler_source = __get_handler_template(server_unpack_args, fn)
+        handler_source = __get_handler_template(server_unpack_args, fn, __from_deco=__from_deco)
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)

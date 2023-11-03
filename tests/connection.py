@@ -1,5 +1,7 @@
 from away import FaasConnection
 
+assert 'shasum' in fn_names, 'This test needs function \'shasum\' available in FaaS'
+
 import unittest
 class TestConnection(unittest.TestCase):
 

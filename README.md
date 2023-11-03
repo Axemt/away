@@ -68,7 +68,7 @@ The decorator creates also a local proxy to call the newly published function lo
 
 ```python
 @builder.publish(faas)
-async sum_all_numbers(l):
+async def sum_all_numbers(l):
 	res = 0
 	for n in l:
 		res = res + n
@@ -76,6 +76,19 @@ async sum_all_numbers(l):
 	return res
 
 await sum_all_numbers([1,2,3,4]) # async-calls the function and returns 10
+```
+
+if you would like to still have a local copy of the function, for example to offload the function to OpenFaaS when the load on the client gets high, use `builder.mirror_in_faas`. Like with `builder.publish`, the published function will retain sync/async characteristics
+
+```python
+secret = 123
+def add_secret(n):
+	return n + secret
+
+add_secret_in_faas = builder.mirror_in_faas(add_secret, faas)
+
+add_secret(1) # Executes the function locally and returns 124
+add_secret_in_faas(1) # Executes the function in OpenFaaS and returns 124
 ```
 
 ## Installation

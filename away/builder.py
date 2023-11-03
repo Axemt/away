@@ -53,6 +53,8 @@ def handle(req):
 
 # Functions are defined as separate implementation to avoid including extra information
 #  and checks in the published function
+
+# pragma: no cover
 def __safe_server_unpack_args(req):
     import yaml
     args =  yaml.safe_load(req)
@@ -63,6 +65,7 @@ def __safe_server_unpack_args(req):
 
     return args, len(args)
 
+# pragma: no cover
 def __unsafe_server_unpack_args(req):
     import yaml
     # uses pyyaml's unsafe Loader

@@ -2,6 +2,7 @@
 import requests
 from requests.exceptions import ConnectionError
 import subprocess
+import os
 
 import warnings
 
@@ -127,4 +128,24 @@ class FaasConnection():
         if not self.is_auth():
             raise Exception(f'OpenFaaS connection is not auth:\n{self}')
 
-    
+    def create_from_template(self, registry_prefix, fn_name):
+
+        if not os.path.isdir('template'):
+            # Re-pull template if not present
+            subprocess.run(
+                ['faas', 'template', 'store', 'pull', 'python3'],
+                check=True
+            )
+
+        # Create templated function
+        subprocess.run(
+            ['faas', 'new', '--lang', 'python3', '--prefix', registry_prefix, '--quiet', fn_name],
+            check=True
+        )
+
+    def publish_from_yaml(self, fn_name):
+        # Publish with faas cli
+        subprocess.run(
+            ['faas', 'up', '--gateway', f'http://{self.address}', '--yaml', f'{fn_name}.yml'],
+            check=True
+        )

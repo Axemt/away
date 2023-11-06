@@ -54,8 +54,7 @@ def handle(req):
 # Functions are defined as separate implementation to avoid including extra information
 #  and checks in the published function
 
-# pragma: no cover
-def __safe_server_unpack_args(req):
+def __safe_server_unpack_args(req): # pragma: no cover
     import yaml
     args =  yaml.safe_load(req)
     if len(args)==1:
@@ -65,8 +64,7 @@ def __safe_server_unpack_args(req):
 
     return args, len(args)
 
-# pragma: no cover
-def __unsafe_server_unpack_args(req):
+def __unsafe_server_unpack_args(req): # pragma: no cover
     import yaml
     # uses pyyaml's unsafe Loader
     args =  yaml.load(req, Loader=yaml.Loader)
@@ -227,17 +225,7 @@ def mirror_in_faas(
 
     try:
 
-        # Re-pull template
-        subprocess.run(
-            ['faas', 'template', 'store', 'pull', 'python3'],
-            check=True
-        )
-
-        # Create templated function
-        subprocess.run(
-            ['faas', 'new', '--lang', 'python3', '--prefix', registry_prefix, '--quiet', fn_name], 
-            check=True
-        )
+        faas.create_from_template(registry_prefix, fn_name)
 
         # TODO: handle possible imports in function?
         # TODO: handle variables used in function but defined outside
@@ -263,11 +251,7 @@ def mirror_in_faas(
             handler.write(handler_source)
 
 
-        # Publish with faas cli
-        subprocess.run(
-            ['faas', 'up', '--gateway', f'http://{faas.address}', '--yaml', f'{fn_name}.yml'],
-            check=True
-        )
+        faas.publish_from_yaml(fn_name)
 
 
     finally:

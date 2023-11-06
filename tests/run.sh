@@ -1,3 +1,6 @@
+# Fail stage if any command in script fails
+set -e
+
 # Build and install
 python3 -m pip install .
 

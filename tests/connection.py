@@ -11,6 +11,11 @@ class TestConnection(unittest.TestCase):
 
         self.assertRaises(Exception, faas.ensure_auth)
 
+    def test_ensure_fn_present(self):
+
+        faas = FaasConnection(password=1234)
+        self.assertRaises(Exception, faas.ensure_fn_present, 'non_existent_function')
+
     def test_repr(self):
         faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False)
 
@@ -35,7 +40,7 @@ class TestConnection(unittest.TestCase):
 
         faas = FaasConnection(password=1234)
         faas.ensure_available()
-        faas = FaasConnection(endpoint='bogus', password=21413423)
+        faas = FaasConnection(provider='bogus', password=21413423, ensure_available=False)
         self.assertRaises(Exception, faas.ensure_available)
 
 

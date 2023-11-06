@@ -6,9 +6,10 @@ class TestConnection(unittest.TestCase):
     def test_constructs(self):
         faas = FaasConnection(ensure_available=False, password=131623564)
 
-    def test_isauth(self):
+    def test_ensure_auth_fails(self):
         faas = FaasConnection(ensure_available=False)
-        self.assertFalse(faas.is_auth())
+
+        self.assertRaises(Exception, faas.ensure_auth)
 
     def test_repr(self):
         faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False)
@@ -32,20 +33,10 @@ class TestConnection(unittest.TestCase):
     def test_ensure_available(self):
         # ensure available is part of the constructor by default
 
-        available = True
-        try:
-            faas = FaasConnection(password=1234)
-        except:
-            available = False
-        
-        self.assertTrue(available)
-
-        available = True
-        try:
-            faas = FaasConnection(endpoint='bogus', password=21413423)
-        except:
-            available = False
-        self.assertFalse(available)
+        faas = FaasConnection(password=1234)
+        faas.ensure_available()
+        faas = FaasConnection(endpoint='bogus', password=21413423)
+        self.assertRaises(Exception, faas.ensure_available)
 
 
 

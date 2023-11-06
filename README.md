@@ -107,3 +107,8 @@ def use_unsafe_arg(rang):
 ## Installation
 
 To install as a pip package run `python -m pip install .` from away’s main directory
+
+Away also needs the following external dependencies:
+
+- [OpenFaas CLI](https://cli.openfaas.com)
+- Docker

@@ -23,6 +23,8 @@ from .__builder_async import from_faas_str as async_from_faas_str
 
 from .FaasConnection import FaasConnection
 
+# Functions are defined as separate implementation to avoid including extra information
+#  and checks in the published function
 HANDLER_TEMPLATE = '''
 # Built with Away version {} on {}
 
@@ -51,8 +53,6 @@ def handle(req):
     return {}({})
     '''
 
-# Functions are defined as separate implementation to avoid including extra information
-#  and checks in the published function
 
 def __safe_server_unpack_args(req): # pragma: no cover
     import yaml
@@ -125,11 +125,11 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __
     source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))
     
     source_fn_txt = '\n'.join(source_fn_arr)
+
+    server_unpack_args_txt = inspect.getsource(server_unpack_args).replace('\t\t','')
     
-    handler = HANDLER_TEMPLATE.format(
-        version('away'),
-        ctime(),
-        inspect.getsource(server_unpack_args).replace('\t\t',''),
+    handler = __format_handler_template(
+        server_unpack_args_txt,
         source_fn_txt,
         captured_vars_txt,
         fn_args_n,
@@ -140,6 +140,33 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __
     )
 
     return handler
+
+def __format_handler_template(
+    server_unpack_args,
+    source_fn,
+    captured_vars,
+    fn_args_n,
+    server_unpack_args_name,
+    fn_arg_names,
+    source_fn_name,
+    fn_args_names
+):
+    """
+    Formats HANDLER TEMPLATE. Separated for convenience, readability and the ability to add default information
+    """
+    
+    return HANDLER_TEMPLATE.format(
+        version('away'),
+        ctime(), # add version information by default
+        server_unpack_args,
+        source_fn,
+        captured_vars,
+        fn_args_n,
+        server_unpack_args_name,
+        fn_arg_names,
+        source_fn_name,
+        fn_args_names
+    )
 
 @parametrized
 def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:

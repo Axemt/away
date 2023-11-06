@@ -228,7 +228,6 @@ def mirror_in_faas(
         faas.create_from_template(registry_prefix, fn_name)
 
         # TODO: handle possible imports in function?
-        # TODO: handle variables used in function but defined outside
 
         # Create unpacker if not provided
         if server_unpack_args is None:

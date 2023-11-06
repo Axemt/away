@@ -113,15 +113,13 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __
     # skip line containing decorator, if it is decorated
     if __from_deco: source_fn_arr.pop(0)
 
-    # check if function is marked as async in source
-    source_marked_async = source_fn_arr[0].find('async') != -1
-    
-    # get source indent level
-    indent_level = source_fn_arr[0].find('def' if not source_marked_async else 'async')
-    indent_level = indent_level if indent_level > 0 else 0
-    
     # replace possible async mark to sync in server
     source_fn_arr[0] = source_fn_arr[0].replace('async def', 'def')
+    
+    # get source indent level
+    indent_level = source_fn_arr[0].find('def')
+    indent_level = indent_level if indent_level > 0 else 0
+    
 
     # unindent if the function happened to be nested
     source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))

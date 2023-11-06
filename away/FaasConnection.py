@@ -129,7 +129,13 @@ class FaasConnection():
             raise Exception(f'OpenFaaS connection is not auth:\n{self}')
 
     def create_from_template(self, registry_prefix, fn_name):
+        """
+        Creates the files for an OpenFaaS templated function 
 
+        arguments:
+            fn_name: The name of the function files to be created
+            regsitry_prefix: The prefix of the registry where to store the function
+        """
         if not os.path.isdir('template'):
             # Re-pull template if not present
             subprocess.run(
@@ -144,6 +150,12 @@ class FaasConnection():
         )
 
     def publish_from_yaml(self, fn_name):
+        """
+        Publishes a function, with an existing folder and .yaml file to this OpenFaaS instance
+
+        arguments:
+            fn_name: The name of folder and .yaml files for this function
+        """
         # Publish with faas cli
         subprocess.run(
             ['faas', 'up', '--gateway', f'http://{self.address}', '--yaml', f'{fn_name}.yml'],

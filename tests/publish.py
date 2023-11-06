@@ -44,18 +44,21 @@ class TestCalls(unittest.TestCase):
         self.assertTrue(True)
 
     def test_is_deployed_as_sync_in_server(self):
-        
-        N = 42656465345
+
+        el = asyncio.new_event_loop()
+        asyncio.set_event_loop(el)
+
+        const = 42656465345
 
         @builder.publish(faas, verbose=True)
         async def should_be_sync_in_server():
-            N = 42656465345
-            return N
+            return const
+
         # The function is deployed as sync because the runtime on the server is sync
         #  i.e: an async deployment would not work.
         # The stub function wrapped is still async
         res = asyncio.run(should_be_sync_in_server())
-        self.assertEqual(res, N)
+        self.assertEqual(res, const)
 
 
     def test_plain(self):

@@ -129,7 +129,8 @@ class TestCalls(unittest.TestCase):
         # a Range object is not normally safely unpackable
         self.assertEqual( sum_from_range(unsafe_arg), 45 ) 
         # The same function built with the default safe_args raises an error
-        self.assertRaises( RepresenterError, sum_all_numbers, unsafe_arg )     
+        self.assertRaises( RepresenterError, sum_all_numbers, unsafe_arg )
+
 
 if __name__ == '__main__':
     unittest.main()

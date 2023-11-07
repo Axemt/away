@@ -81,23 +81,46 @@ def __make_client_pack_args(safe_args: bool) -> Callable[[Iterable[Any]], str]:
 def __make_client_unpack_args(safe_args: bool) -> Callable[[str], Tuple[Any]]: 
     return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
 
+def __expand_dependency_item(var_name: str, var_obj: Any, dependency_closed_l: [str]) -> str:
+
+    res = ''
+    if var_name not in dependency_closed_l:
+        # TODO: if the type of the value is not a complex object, write literal
+        res += f'{var_name} = {var_obj}\n'
+        # ... else expand the dependent function/object/class
+    return res
+
+
+
 def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
     """
-    fn_args = inspect.getfullargspec(source_fn)[0]
-    captured_vars = inspect.getclosurevars(source_fn)
+    fn_args = inspect.getfullargspec(source_fn).args
+
+    # FIXME: Fails for recursive functions defined inside another function or a class
+    try:
+        outside_vars = inspect.getclosurevars(source_fn)
+    except ValueError as e:
+        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
     captured_vars_txt = ''
 
-    if len(captured_vars.unbound) > 0:
-        warnings.warn(f'The function {source_fn.__name__} contains unbound variables ({captured_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
+    # recursive functions with decorator always have the function itself as unbound
+    is_recursive_deco = __from_deco and source_fn.__name__ in outside_vars.unbound
+    if (is_recursive_deco and len(outside_vars.unbound) > 1) or (not is_recursive_deco and len(outside_vars.unbound) > 0) :
+        warnings.warn(f'The function {source_fn.__name__} contains unbound variables ({outside_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
 
-    for group in [captured_vars.nonlocals, captured_vars.globals]:
+    dependency_closed_l = [source_fn.__name__]
+    for group in [outside_vars.nonlocals, outside_vars.globals]:
         for k, v in group.items():
-            captured_vars_txt += f'{k} = {v}\n'
+            # exclude the function itself to allow recursive calls
+            captured_vars_txt += __expand_dependency_item(k, v, dependency_closed_l)
+            dependency_closed_l.append(k)
+
+    print(captured_vars_txt)
 
     if captured_vars_txt != '':
-        warnings.warn(f'[WARN]: Use of variables outside function scope in function body. These will be statically assigned to the current values ({captured_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
+        warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to the current values ({outside_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
 
     fn_args_n = len(fn_args)
     fn_arg_names = ', '.join(fn_args)
@@ -140,6 +163,7 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __
     )
 
     return handler
+
 
 def __format_handler_template(
     server_unpack_args,
@@ -214,7 +238,6 @@ def publish(
 
     
     """
-    
     return mirror_in_faas(fn, faas, registry_prefix, safe_args, enable_dev_building, server_unpack_args, __from_deco=True, **kwargs)
 
 
@@ -241,10 +264,9 @@ def mirror_in_faas(
     fibbonacci_mirrored_in_faas = mirror_in_faas(fibbonacci, faas)
     
     """
-    
+
     fn_name = fn.__name__.replace('_','-')
     
-    #raise NotImplementedError('Under construction')
     assert not os.path.exists(f'{fn_name}.yml'), f'Cannot create FaaS function: The file {fn_name}.yml already exists'
     assert not os.path.exists(f'{fn_name}'), f'Cannot create FaaS function: The folder {fn_name} already exists'
 

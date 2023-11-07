@@ -150,7 +150,7 @@ def __format_handler_template(
     fn_arg_names,
     source_fn_name,
     fn_args_names
-):
+) -> str:
     """
     Formats HANDLER TEMPLATE. Separated for convenience, readability and the ability to add default information
     """
@@ -199,7 +199,7 @@ def publish(
     enable_dev_building: bool = False,
     server_unpack_args: Callable[[Any], Tuple] | None = None,
     **kwargs
-):
+) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
     """
     Publishes the wrapped function to an OpenFaaS server
 

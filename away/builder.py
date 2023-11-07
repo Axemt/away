@@ -265,6 +265,13 @@ def mirror_in_faas(
     
     """
 
+    # This is probably not the best way to check if a function is stateful,
+    #   maybe it just happens to take an arg named 'self'...
+    takes_self_as_arg = 'self' in inspect.getfullargspec(fn).args
+    if takes_self_as_arg or inspect.ismethod(fn):
+        reason = 'takes \'self\' as an argument' if takes_self_as_arg else 'is a class method'
+        raise Exception(f'Can only build stateless functions. The function {fn.__name__} ' + reason)
+
     fn_name = fn.__name__.replace('_','-')
     
     assert not os.path.exists(f'{fn_name}.yml'), f'Cannot create FaaS function: The file {fn_name}.yml already exists'

@@ -9,8 +9,8 @@ coverage run --source away/ -m unittest discover -s tests -p '*.py'
 
 # Cleanup
 rm -rf build/
-docker system prune -a --force
-minikube ssh -- docker system prune -a --force
+docker system prune -a --force --volumes
+minikube ssh -- docker system prune -a --force --volumes
 
 # Report
 coverage report -m --fail-under 80

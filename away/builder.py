@@ -28,6 +28,8 @@ from .FaasConnection import FaasConnection
 HANDLER_TEMPLATE = '''
 # Built with Away version {} on {}
 
+import yaml
+
 # Args unpacker
 {}
     

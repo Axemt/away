@@ -1,5 +1,4 @@
 from away import FaasConnection, builder
-from away.common_utils import parametrized
 import inspect
 
 faas = FaasConnection(password='1234')

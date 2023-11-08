@@ -20,11 +20,11 @@ from .__builder_async import from_faas_deco as __from_faas_deco_async
 from .__builder_sync import from_faas_str as sync_from_faas_str
 from .__builder_async import from_faas_str as async_from_faas_str
 
-from .__protocol import safe_server_unpack_args as __safe_server_unpack_args
-from .__protocol import unsafe_server_unpack_args as __unsafe_server_unpack_args
-from .__protocol import make_client_pack_args as __make_client_pack_args
-from .__protocol import make_client_unpack_args as __make_client_unpack_args
-from .__protocol import expand_dependency_item as __expand_dependency_item
+from .protocol import __safe_server_unpack_args
+from .protocol import __unsafe_server_unpack_args
+from .protocol import make_client_pack_args_fn
+from .protocol import make_client_unpack_args_fn
+from .protocol import __pack_repr_or_protocol
 
 from .FaasConnection import FaasConnection
 
@@ -60,6 +60,35 @@ def handle(req):
     return {}({})
 '''
 
+def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, dependency_closed_l: [str]) -> str:
+
+    res = ''
+    safe_load_prefix_or = 'safe_' if safe_args else ''
+    if var_name not in dependency_closed_l:
+        dependency_closed_l.append(var_name)
+        res += f'{var_name} = {__pack_repr_or_protocol(var_obj, safe_args)}\n'
+    return res
+
+def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
+
+    source_fn_arr = inspect.getsource(source_fn).split('\n')
+    
+    # skip line containing decorator, if it is decorated
+    if __from_deco: source_fn_arr.pop(0)
+
+    # replace possible async mark to sync in server
+    source_fn_arr[0] = source_fn_arr[0].replace('async def', 'def')
+    
+    # get source indent level
+    indent_level = source_fn_arr[0].find('def')
+    indent_level = max(indent_level, 0)
+    
+
+    # unindent if the function happened to be nested
+    source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))
+    
+    source_fn_txt = '\n'.join(source_fn_arr)
+    return source_fn_txt
 
 def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, safe_args: bool, __from_deco=False) -> str:
     """
@@ -84,7 +113,6 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
         for k, v in group.items():
             # exclude the function itself to allow recursive calls
             captured_vars_txt += __expand_dependency_item(k, v, safe_args, dependency_closed_l)
-            dependency_closed_l.append(k)
 
     if captured_vars_txt != '':
         warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to the current values ({outside_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
@@ -98,23 +126,7 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
     if fn_arg_names == '':
         fn_arg_names = '_'
 
-    source_fn_arr = inspect.getsource(source_fn).split('\n')
-    
-    # skip line containing decorator, if it is decorated
-    if __from_deco: source_fn_arr.pop(0)
-
-    # replace possible async mark to sync in server
-    source_fn_arr[0] = source_fn_arr[0].replace('async def', 'def')
-    
-    # get source indent level
-    indent_level = source_fn_arr[0].find('def')
-    indent_level = indent_level if indent_level > 0 else 0
-    
-
-    # unindent if the function happened to be nested
-    source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))
-    
-    source_fn_txt = '\n'.join(source_fn_arr)
+    source_fn_txt = __get_fn_source(source_fn, __from_deco=__from_deco)
 
     server_unpack_args_txt = inspect.getsource(server_unpack_args).replace('\t\t','')
     
@@ -258,9 +270,9 @@ def mirror_in_faas(
             # Establish 'protocol': serialize and then back
             server_unpack_args = __safe_server_unpack_args if safe_args else __unsafe_server_unpack_args
 
-            client_pack_args = __make_client_pack_args(safe_args)
+            client_pack_args = make_client_pack_args_fn(safe_args=safe_args)
 
-            client_unpack_args = __make_client_unpack_args(safe_args)
+            client_unpack_args = make_client_unpack_args_fn(safe_args=safe_args)
 
         # Create handler
         handler_source = __build_handler_template(server_unpack_args, fn, safe_args, __from_deco=__from_deco)

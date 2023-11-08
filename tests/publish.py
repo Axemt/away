@@ -1,4 +1,4 @@
-from away import builder, FaasConnection
+from away import builder, protocol, FaasConnection
 import asyncio
 from yaml.representer import RepresenterError
 
@@ -28,8 +28,8 @@ def sum_all_numbers(l):
 SOME_GLOBAL_VAR = 346234624562
 
 # requirement for `test_compatible_from_str`
-client_pack_args = builder.__make_client_pack_args(True)
-client_unpack_args = builder.__make_client_unpack_args(True)
+client_pack_args = protocol.make_client_pack_args_fn(True)
+client_unpack_args = protocol.make_client_unpack_args_fn(True)
 
 import unittest
 class TestCalls(unittest.TestCase):

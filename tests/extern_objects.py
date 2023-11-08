@@ -7,13 +7,13 @@ nonrepr = map(lambda e: int(e), "1234")
 import unittest
 class TestExternalObjs(unittest.TestCase):
 
-    def pulls_in_non_repr_dep(self):
+    def test_pulls_in_non_repr_dep(self):
 
         @builder.publish(faas, verbose=True, safe_args=False)
         def sum_nonrepr():
             return sum(list(nonrepr))
 
-    def raises_if_not_safe_args(self):
+    def test_raises_if_not_safe_args(self):
 
         def sum_nonrepr():
             return sum(list(nonrepr))

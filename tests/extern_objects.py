@@ -18,5 +18,5 @@ class TestExternalObjs(unittest.TestCase):
         def sum_nonrepr():
             return sum(list(nonrepr))
 
-        self.assertRaises(Exception, builder.mirror_in_faas, raises_if_not_safe_args, faas) 
+        self.assertRaises(Exception, builder.mirror_in_faas, sum_nonrepr, faas) 
 

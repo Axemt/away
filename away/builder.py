@@ -122,8 +122,6 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
             captured_vars_txt += __expand_dependency_item(k, v, safe_args, dependency_closed_l)
             dependency_closed_l.append(k)
 
-    print(captured_vars_txt)
-
     if captured_vars_txt != '':
         warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to the current values ({outside_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
 

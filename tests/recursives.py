@@ -4,8 +4,6 @@ import inspect
 
 faas = FaasConnection(password='1234')
 
-SOME_CT = 452345623456
-
 import unittest
 class TestRecursives(unittest.TestCase):
 
@@ -27,7 +25,6 @@ class TestRecursives(unittest.TestCase):
         
         @builder.publish(faas, verbose=True)
         def fibb(n):
-            a = SOME_CT + 1
             if n in [0,1]:
                 return n
             return fibb(n-1) + fibb(n-2)
@@ -37,7 +34,6 @@ class TestRecursives(unittest.TestCase):
     def test_fib_mirror(self):
 
         def fibb(n):
-            a = SOME_CT + 1
             if n in [0,1]:
                 return n
             return fibb(n-1) + fibb(n-2)

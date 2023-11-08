@@ -51,7 +51,7 @@ def handle(req):
     
     # Call
     return {}({})
-    '''
+'''
 
 
 def __safe_server_unpack_args(req): # pragma: no cover
@@ -81,18 +81,21 @@ def __make_client_pack_args(safe_args: bool) -> Callable[[Iterable[Any]], str]:
 def __make_client_unpack_args(safe_args: bool) -> Callable[[str], Tuple[Any]]: 
     return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
 
-def __expand_dependency_item(var_name: str, var_obj: Any, dependency_closed_l: [str]) -> str:
+def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, dependency_closed_l: [str]) -> str:
 
     res = ''
+    safe_load_prefix_or = 'safe_' if safe_args else ''
+    pack_fn = __make_client_pack_args(safe_args)
     if var_name not in dependency_closed_l:
         # TODO: if the type of the value is not a complex object, write literal
-        res += f'{var_name} = {var_obj}\n'
+        var_obj_yaml = pack_fn(var_obj)
+        res += f'{var_name} = yaml.{safe_load_prefix_or}load(\'{var_obj_yaml}\')\n'
         # ... else expand the dependent function/object/class
     return res
 
 
 
-def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __from_deco=False) -> str:
+def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, safe_args: bool, __from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
     """
@@ -114,7 +117,7 @@ def __get_handler_template(server_unpack_args: Callable, source_fn: Callable, __
     for group in [outside_vars.nonlocals, outside_vars.globals]:
         for k, v in group.items():
             # exclude the function itself to allow recursive calls
-            captured_vars_txt += __expand_dependency_item(k, v, dependency_closed_l)
+            captured_vars_txt += __expand_dependency_item(k, v, safe_args, dependency_closed_l)
             dependency_closed_l.append(k)
 
     print(captured_vars_txt)
@@ -294,11 +297,11 @@ def mirror_in_faas(
 
             client_unpack_args = __make_client_unpack_args(safe_args)
 
-            with open(f'{fn_name}/requirements.txt', 'a') as requirements:
-                requirements.write('pyyaml')
+        with open(f'{fn_name}/requirements.txt', 'a') as requirements:
+            requirements.write('pyyaml')
 
         # Create handler
-        handler_source = __get_handler_template(server_unpack_args, fn, __from_deco=__from_deco)
+        handler_source = __build_handler_template(server_unpack_args, fn, safe_args, __from_deco=__from_deco)
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)

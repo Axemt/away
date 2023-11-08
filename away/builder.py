@@ -1,7 +1,6 @@
 
 import requests
 
-import typing
 from typing import Callable, Any, Awaitable, Tuple, Iterable
 
 import warnings
@@ -20,6 +19,12 @@ from .__builder_async import from_faas_deco as __from_faas_deco_async
 
 from .__builder_sync import from_faas_str as sync_from_faas_str
 from .__builder_async import from_faas_str as async_from_faas_str
+
+from .__protocol import safe_server_unpack_args as __safe_server_unpack_args
+from .__protocol import unsafe_server_unpack_args as __unsafe_server_unpack_args
+from .__protocol import make_client_pack_args as __make_client_pack_args
+from .__protocol import make_client_unpack_args as __make_client_unpack_args
+from .__protocol import expand_dependency_item as __expand_dependency_item
 
 from .FaasConnection import FaasConnection
 
@@ -54,47 +59,6 @@ def handle(req):
     # Call
     return {}({})
 '''
-
-
-def __safe_server_unpack_args(req): # pragma: no cover
-    import yaml
-    args =  yaml.safe_load(req)
-    if len(args)==1:
-        return args[0], 1
-    if len(args)==0:
-        return None, 0
-
-    return args, len(args)
-
-def __unsafe_server_unpack_args(req): # pragma: no cover
-    import yaml
-    # uses pyyaml's unsafe Loader
-    args =  yaml.load(req, Loader=yaml.Loader)
-    if len(args)==1:
-        return args[0], 1
-    if len(args)==0:
-        return None, 0
-
-    return args, len(args)
-
-def __make_client_pack_args(safe_args: bool) -> Callable[[Iterable[Any]], str]: 
-    return (lambda it: yaml.safe_dump(it)) if safe_args else (lambda it: yaml.dump(it))
-
-def __make_client_unpack_args(safe_args: bool) -> Callable[[str], Tuple[Any]]: 
-    return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
-
-def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, dependency_closed_l: [str]) -> str:
-
-    res = ''
-    safe_load_prefix_or = 'safe_' if safe_args else ''
-    pack_fn = __make_client_pack_args(safe_args)
-    if var_name not in dependency_closed_l:
-        # TODO: if the type of the value is not a complex object, write literal
-        var_obj_yaml = pack_fn(var_obj).replace('\n', '\\n')
-        res += f'{var_name} = yaml.{safe_load_prefix_or}load(\'{var_obj_yaml}\')\n'
-        # ... else expand the dependent function/object/class
-    return res
-
 
 
 def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, safe_args: bool, __from_deco=False) -> str:

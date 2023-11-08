@@ -33,7 +33,7 @@ from .FaasConnection import FaasConnection
 HANDLER_TEMPLATE = '''
 # Built with Away version {} on {}
 
-import yaml
+{}
 
 # Args unpacker
 {}
@@ -149,6 +149,7 @@ def __format_handler_template(
     return HANDLER_TEMPLATE.format(
         version('away'),
         ctime(), # add version information by default
+        '# protocol unpacker\nimport yaml\n' if 'yaml.' in captured_vars else '',
         server_unpack_args,
         source_fn,
         captured_vars,
@@ -261,11 +262,12 @@ def mirror_in_faas(
 
             client_unpack_args = __make_client_unpack_args(safe_args)
 
-        with open(f'{fn_name}/requirements.txt', 'a') as requirements:
-            requirements.write('pyyaml')
-
         # Create handler
         handler_source = __build_handler_template(server_unpack_args, fn, safe_args, __from_deco=__from_deco)
+
+        if 'import yaml' in handler_source:
+            with open(f'{fn_name}/requirements.txt', 'a') as requirements:
+                requirements.write('pyyaml')
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)

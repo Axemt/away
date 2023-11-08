@@ -51,6 +51,26 @@ def fibonacci(name):
 fibonacci(10) # returns (55, 200)
 ```
 
+### Using existing functions built using `away`
+
+First off that's great! This project is useful for someone!
+
+Use `away.protocol` to access the unpacking and packing functions to communicate with an already published function that used `away`'s default protocol.
+
+```python
+from away import protocol
+
+packer_function = protocol.make_client_pack_args_fn(safe_args=True)
+unpacker_function = protocol.make_client_unpack_args_fn(safe_args=True)
+
+@builder.faas_function(faas, pack_args=packer_function, unpack_args=unpacker_function)
+def fibonacci(n):
+	pass
+```
+This in fact also hints at the fact that, if you would like to use a different packing/unpacking procedure, or must adapt to an existing function with specific return format, you can pass `pack_args` and `unpack_args` to `builder.faas_function` to override the default behaviour (no procedure).
+
+The packer function must have a signature of type `Iterable[Any] -> str`, and the unpacker `str -> Tuple[Any]`
+
 ### Build and deploy your own functions programatically
 You can also push a function to an OpenFaaS server with `builder.publish`. You must be logged in to the FaaS server with enough privileges to deploy functions:
 

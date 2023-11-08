@@ -10,7 +10,7 @@ class TestExternalObjs(unittest.TestCase):
 
         nonrepr = map(lambda e: int(e), "1234")
 
-        @builder.publish(faas, verbose=True)
+        @builder.publish(faas, verbose=True, safe_args=False)
         def sum_nonrepr():
             return sum(list(nonrepr))
 

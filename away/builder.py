@@ -88,7 +88,7 @@ def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, depen
     pack_fn = __make_client_pack_args(safe_args)
     if var_name not in dependency_closed_l:
         # TODO: if the type of the value is not a complex object, write literal
-        var_obj_yaml = pack_fn(var_obj)
+        var_obj_yaml = pack_fn(var_obj).replace('\n', '\\n')
         res += f'{var_name} = yaml.{safe_load_prefix_or}load(\'{var_obj_yaml}\')\n'
         # ... else expand the dependent function/object/class
     return res

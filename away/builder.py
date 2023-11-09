@@ -6,6 +6,7 @@ from typing import Callable, Any, Awaitable, Tuple, Iterable
 import warnings
 
 import inspect
+from types import LambdaType
 from importlib.metadata import version
 from time import ctime
 import yaml
@@ -13,7 +14,8 @@ import subprocess
 import os
 import shutil
 
-from .common_utils import parametrized, pack_args
+from .common_utils import parametrized
+from .__fn_utils import __get_fn_source, __is_lambda
 from .__builder_sync import from_faas_deco as __from_faas_deco_sync
 from .__builder_async import from_faas_deco as __from_faas_deco_async
 
@@ -32,7 +34,6 @@ from .FaasConnection import FaasConnection
 #  and checks in the published function
 HANDLER_TEMPLATE = '''
 # Built with Away version {} on {}
-
 {}
 
 # Args unpacker
@@ -66,29 +67,11 @@ def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, depen
     safe_load_prefix_or = 'safe_' if safe_args else ''
     if var_name not in dependency_closed_l:
         dependency_closed_l.append(var_name)
-        res += f'{var_name} = {__pack_repr_or_protocol(var_obj, safe_args)}\n'
+        # only assign name to variables that can be assigned; i.e everything except non-functions. Lambda sources already include the name
+        if not inspect.isfunction(var_obj):
+            res += f'{var_name} = '
+        res += f'{__pack_repr_or_protocol(var_obj, safe_args)}\n'
     return res
-
-def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
-
-    source_fn_arr = inspect.getsource(source_fn).split('\n')
-    
-    # skip line containing decorator, if it is decorated
-    if __from_deco: source_fn_arr.pop(0)
-
-    # replace possible async mark to sync in server
-    source_fn_arr[0] = source_fn_arr[0].replace('async def', 'def')
-    
-    # get source indent level
-    indent_level = source_fn_arr[0].find('def')
-    indent_level = max(indent_level, 0)
-    
-
-    # unindent if the function happened to be nested
-    source_fn_arr = list(map(lambda l: l[indent_level:], source_fn_arr))
-    
-    source_fn_txt = '\n'.join(source_fn_arr)
-    return source_fn_txt
 
 def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, safe_args: bool, __from_deco=False) -> str:
     """
@@ -111,10 +94,6 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
     dependency_closed_l = [source_fn.__name__]
     for group in [outside_vars.nonlocals, outside_vars.globals]:
         for varname, var in group.items():
-            # Exclude function/callable dependencies to avoid pulling an entire library :0
-            #  exclude the function itself from this check to allow recursive calls
-            if inspect.isfunction(var) and varname != source_fn.__name__:
-                raise Exception(f'The variable {varname} is a function or callable outside of the scope of the current function and is a dependency that cannot be pulled in. OpenFaaS function must be self contained.')
             captured_vars_txt += __expand_dependency_item(varname, var, safe_args, dependency_closed_l)
 
     if captured_vars_txt != '':
@@ -143,6 +122,7 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
         source_fn.__name__,
         fn_arg_names if not noargs else ''
     )
+
 
     return handler
 

@@ -2,6 +2,8 @@ import yaml
 from typing import Callable, Any, Awaitable, Tuple, Iterable
 import inspect
 
+from .__fn_utils import __get_fn_source
+
 def __safe_server_unpack_args(req): # pragma: no cover
     import yaml
     args =  yaml.safe_load(req)
@@ -33,6 +35,8 @@ def __pack_repr_or_protocol(var_obj: Any, safe_args: bool) -> str:
 
     if __is_repr_literal(var_obj):
         return f'{repr(var_obj)}'
+    elif inspect.isfunction(var_obj):
+        return __get_fn_source(var_obj)
     else:
         safe_load_prefix_or = 'safe_' if safe_args else ''
         pack_fn = make_client_pack_args_fn(safe_args=safe_args)

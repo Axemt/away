@@ -1,4 +1,5 @@
 from away import builder, FaasConnection
+from away.__fn_utils import __is_lambda as is_lambda
 
 faas = FaasConnection(password=1234)
 
@@ -20,3 +21,15 @@ class TestExternalObjs(unittest.TestCase):
 
         self.assertRaises(Exception, builder.mirror_in_faas, sum_nonrepr, faas) 
 
+    def test_is_lambda(self):
+
+        def a():
+            return 0
+
+        b = lambda: 1
+
+        self.assertTrue(not is_lambda(a))
+        self.assertTrue(is_lambda(b))
+
+if __name__ == '__main__':
+    unittest.main()

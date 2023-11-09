@@ -52,9 +52,27 @@ class TestProtocol(unittest.TestCase):
         
         self.assertEqual(tuple(server_side_args), args)
 
+    def test_external_fn_dependency(self):
 
+        def outside_dep_fn():
+            return 1
+
+        @builder.publish(faas, verbose=True)
+        def uses_outside_dep_fn(n):
+            return n + outside_dep_fn()
+
+        self.assertEqual(uses_outside_dep_fn(1), 2)
 
         
+    def test_external_lambda_dependency(self):
+
+        outside_dep_lambda = lambda: 1
+
+        @builder.publish(faas, verbose=True)
+        def uses_outside_dep_lambda(n):
+            return n + outside_dep_lambda()
+
+        self.assertEqual(uses_outside_dep_lambda(1), 2)
 
 if __name__ == '__main__':
     unittest.main()

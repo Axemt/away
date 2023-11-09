@@ -10,6 +10,9 @@ class T:
     def class_method(self, n):
         return n+1
 
+def outside_dep():
+    return 0
+
 import unittest
 class TestStateless(unittest.TestCase):
 
@@ -26,3 +29,10 @@ class TestStateless(unittest.TestCase):
     def test_from_uninstanced_takes_self(self):
 
         self.assertRaises(Exception, builder.mirror_in_faas, T.class_method, faas)
+
+    def test_external_fn_dependency_raises(self):
+
+        def uses_outside_dep(n):
+            return n + outside_dep()
+
+        self.assertRaises(Exception, builder.mirror_in_faas, uses_outside_dep, faas)

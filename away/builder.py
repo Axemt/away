@@ -110,9 +110,12 @@ def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, 
 
     dependency_closed_l = [source_fn.__name__]
     for group in [outside_vars.nonlocals, outside_vars.globals]:
-        for k, v in group.items():
-            # exclude the function itself to allow recursive calls
-            captured_vars_txt += __expand_dependency_item(k, v, safe_args, dependency_closed_l)
+        for varname, var in group.items():
+            # Exclude function/callable dependencies to avoid pulling an entire library :0
+            #  exclude the function itself from this check to allow recursive calls
+            if inspect.isfunction(var) and varname != source_fn.__name__:
+                raise Exception(f'The variable {varname} is a function or callable outside of the scope of the current function and is a dependency that cannot be pulled in. OpenFaaS function must be self contained.')
+            captured_vars_txt += __expand_dependency_item(varname, var, safe_args, dependency_closed_l)
 
     if captured_vars_txt != '':
         warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to the current values ({outside_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 

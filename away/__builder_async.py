@@ -55,7 +55,7 @@ def __builder_async(function_name: str,
 
         return (await asyncio.gather(res_fut))[0]
 
-    faas_fn.__name__ += '_' + function_name
+    faas_fn.__name__ = f'{function_name}_faas_fn_async'
     return faas_fn
 
 

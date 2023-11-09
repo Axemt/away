@@ -57,6 +57,7 @@ def __builder_sync(function_name: str,
         else:
             return (r, res.status_code)   
     
+    faas_fn.__name__ = f'{function_name}_faas_fn_sync' 
     return faas_fn
 
 def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any], Any]:

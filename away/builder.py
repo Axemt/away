@@ -15,7 +15,7 @@ import os
 import shutil
 
 from .common_utils import parametrized
-from .__fn_utils import __get_fn_source, __is_lambda
+from .__fn_utils import __get_fn_source, __is_lambda, __ensure_stateless
 from .__builder_sync import from_faas_deco as __from_faas_deco_sync
 from .__builder_async import from_faas_deco as __from_faas_deco_async
 
@@ -62,6 +62,9 @@ def handle(req):
 '''
 
 def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, dependency_closed_l: [str]) -> str:
+    """
+    Gets the line to insert in the template to define <var_name> with value <var_obj> in the server
+    """
 
     res = ''
     safe_load_prefix_or = 'safe_' if safe_args else ''
@@ -227,13 +230,7 @@ def mirror_in_faas(
     fibbonacci_mirrored_in_faas = mirror_in_faas(fibbonacci, faas)
     
     """
-
-    # This is probably not the best way to check if a function is stateful,
-    #   maybe it just happens to take an arg named 'self'...
-    takes_self_as_arg = 'self' in inspect.getfullargspec(fn).args
-    if takes_self_as_arg or inspect.ismethod(fn):
-        reason = 'takes \'self\' as an argument' if takes_self_as_arg else 'is a class method'
-        raise Exception(f'Can only build stateless functions. The function {fn.__name__} ' + reason)
+    __ensure_stateless(fn)
 
     fn_name = fn.__name__.replace('_','-')
     

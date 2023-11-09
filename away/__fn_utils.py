@@ -22,3 +22,20 @@ def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
     return source_fn_txt
 
 __is_lambda = lambda fn: inspect.isfunction(fn) and fn.__name__ == '<lambda>'
+
+def __is_stateless(fn: Callable[[Any], Any]) -> bool:
+    # This is probably not the best way to check if a function is stateful,
+    #   maybe it just happens to take an arg named 'self'...
+    return not (__is_takes_self(fn) or inspect.ismethod(fn))
+
+def __is_takes_self(fn: Callable[[Any], Any]) -> bool:
+    takes_self_as_arg = 'self' in inspect.getfullargspec(fn).args
+    return takes_self_as_arg
+
+def __ensure_stateless(fn):
+    # This is probably not the best way to check if a function is stateful,
+    #   maybe it just happens to take an arg named 'self'...
+    
+    if not __is_stateless(fn):
+        reason = 'takes \'self\' as an argument' if __is_takes_self(fn) else 'is a class method'
+        raise Exception(f'Can only build stateless functions. The function {fn.__name__} ' + reason)

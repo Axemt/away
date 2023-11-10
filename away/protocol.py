@@ -31,7 +31,7 @@ def make_client_pack_args_fn(safe_args: bool = True) -> Callable[[Iterable[Any]]
 def make_client_unpack_args_fn(safe_args: bool = True) -> Callable[[str], Tuple[Any]]: 
     return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
 
-def __pack_repr_or_protocol(var_obj: Any, safe_args: bool) -> str:
+def __pack_repr_or_protocol(var_obj: Any, safe_args: bool = False) -> str:
 
     if __is_repr_literal(var_obj):
         return f'{repr(var_obj)}'

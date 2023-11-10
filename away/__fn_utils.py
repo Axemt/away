@@ -1,5 +1,6 @@
 from typing import Callable, Any
 import inspect
+import dis
 
 def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
     source_fn_arr = inspect.getsource(source_fn).split('\n')
@@ -39,3 +40,16 @@ def __ensure_stateless(fn):
     if not __is_stateless(fn):
         reason = 'takes \'self\' as an argument' if __is_takes_self(fn) else 'is a class method'
         raise Exception(f'Can only build stateless functions. The function {fn.__name__} ' + reason)
+
+
+def __get_all_modules_mentioned(fn: Callable[[Any], Any]) -> [str]:
+
+    with open(fn.__code__.co_filename) as f:
+        lines_with_import_str = ''.join([line for line in f.readlines() if 'import' in line])
+
+
+    instructions = dis.get_instructions(lines_with_import_str)
+    import_instructions = [__ for __ in instructions if 'IMPORT' in __.opname]
+
+    imports = [ instr.argval for instr in import_instructions ]
+    return imports

@@ -2,6 +2,7 @@
 import requests
 
 from typing import Callable, Any, Awaitable, Tuple, Iterable
+from types import ModuleType
 
 import warnings
 
@@ -61,46 +62,62 @@ def handle(req):
     return {}({})
 '''
 
-def __expand_dependency_item(var_name: str, var_obj: Any, safe_args: bool, dependency_closed_l: [str]) -> str:
+def __expand_dependency_item(
+    var_name: str, 
+    var_obj: Any) -> str:
     """
     Gets the line to insert in the template to define <var_name> with value <var_obj> in the server
     """
 
     res = ''
-    safe_load_prefix_or = 'safe_' if safe_args else ''
-    if var_name not in dependency_closed_l:
-        dependency_closed_l.append(var_name)
-        # only assign name to variables that can be assigned; i.e everything except non-functions. Lambda sources already include the name
-        if not inspect.isfunction(var_obj):
-            res += f'{var_name} = '
-        res += f'{__pack_repr_or_protocol(var_obj, safe_args)}\n'
+
+    # only assign name to variables that can be assigned; i.e everything except non-functions. Lambda sources already include the name
+    if not inspect.isfunction(var_obj):
+        res += f'{var_name} = '
+
+    # Since we are pulling in a dependency, everything is assumed to be safe
+    #  i.e: it's your fault if you use an unsafe dependency in your own function
+    #  this doesn't mean the calls are safe. Call safety is handled separately
+    res += f'{__pack_repr_or_protocol(var_obj, safe_args=False)}\n'
+    
     return res
 
-def __build_handler_template(server_unpack_args: Callable, source_fn: Callable, safe_args: bool, __from_deco=False) -> str:
+def __get_external_dependencies(fn: Callable[[Any], Any], closed_l: list[str]=[], from_deco: bool=False) -> str:
+    res = ''
+
+    # FIXME: Fails for recursive functions defined inside another function or a class
+    try:
+        outside_vars = inspect.getclosurevars(fn)
+    except ValueError as e:
+        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
+
+    # recursive functions with decorator always have the function itself as unbound
+    is_recursive_deco = from_deco and fn.__name__ in outside_vars.unbound
+    if (is_recursive_deco and len(outside_vars.unbound) > 1) or (not is_recursive_deco and len(outside_vars.unbound) > 0) :
+        warnings.warn(f'The function {fn.__name__} contains unbound variables ({outside_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
+    
+    closed_l.append(fn.__name__)
+    for group in [outside_vars.nonlocals, outside_vars.globals]:
+        for var_name, var_obj in group.items():
+            if var_name not in closed_l:
+                closed_l.append(var_name)
+                res += __expand_dependency_item(var_name, var_obj)
+
+    return res
+
+def __build_handler_template(
+    server_unpack_args: Callable,
+    source_fn: Callable,
+    __from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
     """
     fn_args = inspect.getfullargspec(source_fn).args
 
-    # FIXME: Fails for recursive functions defined inside another function or a class
-    try:
-        outside_vars = inspect.getclosurevars(source_fn)
-    except ValueError as e:
-        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
-    captured_vars_txt = ''
-
-    # recursive functions with decorator always have the function itself as unbound
-    is_recursive_deco = __from_deco and source_fn.__name__ in outside_vars.unbound
-    if (is_recursive_deco and len(outside_vars.unbound) > 1) or (not is_recursive_deco and len(outside_vars.unbound) > 0) :
-        warnings.warn(f'The function {source_fn.__name__} contains unbound variables ({outside_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
-
-    dependency_closed_l = [source_fn.__name__]
-    for group in [outside_vars.nonlocals, outside_vars.globals]:
-        for varname, var in group.items():
-            captured_vars_txt += __expand_dependency_item(varname, var, safe_args, dependency_closed_l)
+    captured_vars_txt = __get_external_dependencies(source_fn, from_deco=__from_deco)
 
     if captured_vars_txt != '':
-        warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to the current values ({outside_vars}) because OpenFaaS functions are stateless', SyntaxWarning) 
+        warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to their current values because OpenFaaS functions are stateless', SyntaxWarning) 
 
     fn_args_n = len(fn_args)
     fn_arg_names = ', '.join(fn_args)
@@ -138,8 +155,7 @@ def __format_handler_template(
     server_unpack_args_name,
     fn_arg_names,
     source_fn_name,
-    fn_args_names
-) -> str:
+    fn_args_names) -> str:
     """
     Formats HANDLER TEMPLATE. Separated for convenience, readability and the ability to add default information
     """
@@ -246,7 +262,7 @@ def mirror_in_faas(
         # Create unpacker if not provided
         if server_unpack_args is None:
             if not safe_args:
-                warnings.warn('"safe_args"=False; This may expose your OpenFaaS instance to malicious requests through python\'s "pickle" module. See {https://docs.python.org/3/library/pickle.html} for details')
+                warnings.warn('"safe_args"=False; This may expose your OpenFaaS instance to malicious call requests through python\'s "pickle" module. See {https://docs.python.org/3/library/pickle.html} for details')
             # Establish 'protocol': serialize and then back
             server_unpack_args = __safe_server_unpack_args if safe_args else __unsafe_server_unpack_args
 
@@ -255,7 +271,7 @@ def mirror_in_faas(
             client_unpack_args = make_client_unpack_args_fn(safe_args=safe_args)
 
         # Create handler
-        handler_source = __build_handler_template(server_unpack_args, fn, safe_args, __from_deco=__from_deco)
+        handler_source = __build_handler_template(server_unpack_args, fn, __from_deco=__from_deco)
 
         if 'import yaml' in handler_source:
             with open(f'{fn_name}/requirements.txt', 'a') as requirements:

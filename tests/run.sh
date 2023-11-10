@@ -1,3 +1,4 @@
+set -e
 # Build and install
 python3 -m pip install .
 
@@ -12,3 +13,4 @@ minikube ssh -- docker system prune -a --force --volumes >> /dev/null
 
 # Report
 coverage report -m --fail-under 80
+exit $test_retcode

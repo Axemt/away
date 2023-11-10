@@ -10,16 +10,17 @@ class TestExternalObjs(unittest.TestCase):
 
     def test_pulls_in_non_repr_dep(self):
 
-        @builder.publish(faas, verbose=True, safe_args=False)
+        @builder.publish(faas, verbose=True)
         def sum_nonrepr():
             return sum(list(nonrepr))
 
     def test_raises_if_not_safe_args(self):
 
-        def sum_nonrepr():
-            return sum(list(nonrepr))
+        @builder.publish(faas)
+        def get_nonrepr():
+            return nonrepr
 
-        self.assertRaises(Exception, builder.mirror_in_faas, sum_nonrepr, faas) 
+        self.assertRaises(Exception, get_nonrepr)
 
     def test_is_lambda(self):
 
@@ -30,6 +31,18 @@ class TestExternalObjs(unittest.TestCase):
 
         self.assertTrue(not is_lambda(a))
         self.assertTrue(is_lambda(b))
+
+    def test_chain_dep(self):
+
+        secret = 321352345
+        def uses_dep():
+            return secret
+
+        @builder.publish(faas, verbose=True)
+        def uses_chain():
+            return uses_dep()
+
+        self.assertEqual(uses_chain(), secret)
 
 if __name__ == '__main__':
     unittest.main()

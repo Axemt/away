@@ -39,11 +39,9 @@ HANDLER_TEMPLATE = '''
 
 # Args unpacker
 {}
-    
-# Wrapped to-publish function
+# Captured dependencies at build time
 {}
-
-# Captured variables at build time
+# Wrapped to-publish function
 {}
 
 EXPECTED_LEN_OF_ARGS = {}
@@ -82,32 +80,39 @@ def __expand_dependency_item(
     
     return res
 
-def __get_external_dependencies(fn: Callable[[Any], Any], closed_l: list[str]=[], from_deco: bool=False) -> str:
+def __get_external_dependencies(fn: Callable[[Any], Any], from_deco: bool=False) -> str:
+    return __get_external_dependencies_rec(fn, set(), from_deco=from_deco)
+
+def __get_external_dependencies_rec(fn: Callable[[Any], Any], closed_s: set[str], from_deco: bool=False) -> str:
     res = ''
 
-    # FIXME: Fails for recursive functions defined inside another function or a class
     try:
+        # FIXME: Fails for recursive functions defined inside another function or a class
+        #         this looks like a problem on `inspect`'s end. (py3.10)
         outside_vars = inspect.getclosurevars(fn)
     except ValueError as e:
-        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
+        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a recursive function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
 
     # recursive functions with decorator always have the function itself as unbound
     is_recursive_deco = from_deco and fn.__name__ in outside_vars.unbound
     if (is_recursive_deco and len(outside_vars.unbound) > 1) or (not is_recursive_deco and len(outside_vars.unbound) > 0) :
         warnings.warn(f'The function {fn.__name__} contains unbound variables ({outside_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
     
-    closed_l.append(fn.__name__)
+    closed_s.add(fn.__name__)
     for group in [outside_vars.nonlocals, outside_vars.globals]:
         for var_name, var_obj in group.items():
-            if var_name not in closed_l:
-                closed_l.append(var_name)
-                res += __expand_dependency_item(var_name, var_obj)
+            if var_name not in closed_s:
+                closed_s.add(var_name)
+                add = __expand_dependency_item(var_name, var_obj)
+                res += add
+                if inspect.isfunction(var_obj):
+                    res += __get_external_dependencies_rec(var_obj, closed_s)
 
     return res
 
 def __build_handler_template(
-    server_unpack_args: Callable,
     source_fn: Callable,
+    server_unpack_args: Callable,
     __from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
@@ -165,8 +170,8 @@ def __format_handler_template(
         ctime(), # add version information by default
         '# protocol unpacker\nimport yaml\n' if 'yaml.' in captured_vars else '',
         server_unpack_args,
-        source_fn,
         captured_vars,
+        source_fn,
         fn_args_n,
         server_unpack_args_name,
         fn_arg_names,
@@ -271,7 +276,7 @@ def mirror_in_faas(
             client_unpack_args = make_client_unpack_args_fn(safe_args=safe_args)
 
         # Create handler
-        handler_source = __build_handler_template(server_unpack_args, fn, __from_deco=__from_deco)
+        handler_source = __build_handler_template(fn, server_unpack_args,__from_deco=__from_deco)
 
         if 'import yaml' in handler_source:
             with open(f'{fn_name}/requirements.txt', 'a') as requirements:

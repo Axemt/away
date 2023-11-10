@@ -41,5 +41,20 @@ class TestRecursives(unittest.TestCase):
 
         self.assertEqual(fibb_in_faas(10),55)
 
+    def test_resolves_interlocking_dep(self):
+
+        def interlocking_fn_a(n):
+            if n == 0: return
+            interlocking_fn_b(n-1)
+
+        def interlocking_fn_b(n):
+            if n == 0: return
+            interlocking_fn_a(n-1)
+
+        interlocking = builder.mirror_in_faas(interlocking_fn_b, faas, verbose=True)
+
+        interlocking(10)
+
+
 if __name__ == '__main__':
     unittest.main()

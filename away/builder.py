@@ -149,6 +149,30 @@ def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], 
 
     return builder_fn(fn, *args, **kwargs)
 
+def faas_function_with_protocol(fn: Callable[[Any], Any], safe_args: bool= True, *args, **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
+    """
+    Converts a blank function into an OpenFaaS function using away's protocol
+
+    This creates an OpenFaaS function proxy for the wrapped function. The function
+    name is the same as the blank function being wrapped
+
+    Function stubs marked `async` will be using async wrappers, and vice-versa.
+
+    Usage:
+    faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
+
+    @builder.faas_function_with_protocol(faas)
+    async def a_function_that_used_away(takes, some, arguments):
+        pass
+    
+    """
+    client_pack_args = make_client_pack_args_fn(safe_args=safe_args)
+    client_unpack_args = make_client_pack_args_fn(safe_args=safe_args)
+
+    return faas_function(fn, *args, pack_args=client_pack_args, unpack_args=client_unpack_args, **kwargs)
+
+sync_from_faas_str_with_protocol = lambda *args, **kwargs: sync_from_faas_str(*args, )
+
 @parametrized
 def publish( 
     fn: Callable[[Any], Any], 
@@ -157,8 +181,7 @@ def publish(
     safe_args: bool = True,
     enable_dev_building: bool = False,
     server_unpack_args: Callable[[Any], Tuple] | None = None,
-    **kwargs
-) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
+    **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
     """
     Publishes the wrapped function to an OpenFaaS server
 
@@ -184,8 +207,7 @@ def mirror_in_faas(
     enable_dev_building: bool = False,
     server_unpack_args: Callable[[Any], Tuple] | None = None,
     __from_deco: bool = False,
-    **kwargs
-) -> Callable[[Any], Any]:
+    **kwargs) -> Callable[[Any], Any]:
     """
     Mirrors a given function in an OpenFaaS server, and returns a proxy
 

@@ -16,18 +16,16 @@ import os
 import shutil
 
 from .common_utils import parametrized
-from .__fn_utils import __get_fn_source, __is_lambda, __ensure_stateless
+from .__fn_utils import __get_fn_source, __get_external_dependencies
+from .__fn_utils import __is_lambda, __ensure_stateless
+
 from .__builder_sync import from_faas_deco as __from_faas_deco_sync
 from .__builder_async import from_faas_deco as __from_faas_deco_async
-
 from .__builder_sync import from_faas_str as sync_from_faas_str
 from .__builder_async import from_faas_str as async_from_faas_str
 
-from .protocol import __safe_server_unpack_args
-from .protocol import __unsafe_server_unpack_args
-from .protocol import make_client_pack_args_fn
-from .protocol import make_client_unpack_args_fn
-from .protocol import __pack_repr_or_protocol
+from .protocol import __safe_server_unpack_args, __unsafe_server_unpack_args
+from .protocol import make_client_pack_args_fn, make_client_unpack_args_fn
 
 from .FaasConnection import FaasConnection
 
@@ -59,56 +57,6 @@ def handle(req):
     # Call
     return {}({})
 '''
-
-def __expand_dependency_item(
-    var_name: str, 
-    var_obj: Any) -> str:
-    """
-    Gets the line to insert in the template to define <var_name> with value <var_obj> in the server
-    """
-
-    res = ''
-
-    # only assign name to variables that can be assigned; i.e everything except non-functions. Lambda sources already include the name
-    if not inspect.isfunction(var_obj):
-        res += f'{var_name} = '
-
-    # Since we are pulling in a dependency, everything is assumed to be safe
-    #  i.e: it's your fault if you use an unsafe dependency in your own function
-    #  this doesn't mean the calls are safe. Call safety is handled separately
-    res += f'{__pack_repr_or_protocol(var_obj, safe_args=False)}\n'
-    
-    return res
-
-def __get_external_dependencies(fn: Callable[[Any], Any], from_deco: bool=False) -> str:
-    return __get_external_dependencies_rec(fn, set(), from_deco=from_deco)
-
-def __get_external_dependencies_rec(fn: Callable[[Any], Any], closed_s: set[str], from_deco: bool=False) -> str:
-    res = ''
-
-    try:
-        # FIXME: Fails for recursive functions defined inside another function or a class
-        #         this looks like a problem on `inspect`'s end. (py3.10)
-        outside_vars = inspect.getclosurevars(fn)
-    except ValueError as e:
-        raise Exception("A value error was raised in `inspect.getclosurevars`. This is likely because you are decorating a recursive function within a function/closure or class. For the meantime, use `builder.mirror_in_faas`: " + repr(e))
-
-    # recursive functions with decorator always have the function itself as unbound
-    is_recursive_deco = from_deco and fn.__name__ in outside_vars.unbound
-    if (is_recursive_deco and len(outside_vars.unbound) > 1) or (not is_recursive_deco and len(outside_vars.unbound) > 0) :
-        warnings.warn(f'The function {fn.__name__} contains unbound variables ({outside_vars.unbound})that cannot be resolved at build time. These may result in errors within the built OpenFaaS function.', SyntaxWarning)
-    
-    closed_s.add(fn.__name__)
-    for group in [outside_vars.nonlocals, outside_vars.globals]:
-        for var_name, var_obj in group.items():
-            if var_name not in closed_s:
-                closed_s.add(var_name)
-                add = __expand_dependency_item(var_name, var_obj)
-                res += add
-                if inspect.isfunction(var_obj):
-                    res += __get_external_dependencies_rec(var_obj, closed_s)
-
-    return res
 
 def __build_handler_template(
     source_fn: Callable,

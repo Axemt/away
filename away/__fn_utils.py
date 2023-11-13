@@ -2,6 +2,8 @@ from typing import Callable, Any
 import inspect
 import dis
 
+from .exceptions import EnsureException
+
 def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
     source_fn_arr = inspect.getsource(source_fn).split('\n')
     is_lambda = __is_lambda(source_fn)
@@ -39,7 +41,7 @@ def __ensure_stateless(fn):
     
     if not __is_stateless(fn):
         reason = 'takes \'self\' as an argument' if __is_takes_self(fn) else 'is a class method'
-        raise Exception(f'Can only build stateless functions. The function {fn.__name__} ' + reason)
+        raise EnsureException(f'Can only build stateless functions. The function {fn.__name__} ' + reason)
 
 def __get_external_dependencies(fn: Callable[[Any], Any], from_deco: bool=False) -> str:
     return __get_external_dependencies_rec(fn, set(), from_deco=from_deco)

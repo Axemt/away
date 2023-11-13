@@ -1,4 +1,5 @@
 from away import builder, FaasConnection
+from away.exceptions import EnsureException
 
 faas = FaasConnection(password=1234)
 
@@ -15,8 +16,8 @@ class TestStateless(unittest.TestCase):
 
     def test_with_instance_raises(self):
 
-        self.assertRaises(Exception, builder.mirror_in_faas, T().static_fn_part_of_class, faas)
-        self.assertRaises(Exception, builder.mirror_in_faas, T().class_method, faas)
+        self.assertRaises(EnsureException, builder.mirror_in_faas, T().static_fn_part_of_class, faas)
+        self.assertRaises(EnsureException, builder.mirror_in_faas, T().class_method, faas)
 
     def test_from_uninstanced_doesnt_take_self(self):
 
@@ -25,7 +26,7 @@ class TestStateless(unittest.TestCase):
 
     def test_from_uninstanced_takes_self(self):
 
-        self.assertRaises(Exception, builder.mirror_in_faas, T.class_method, faas)
+        self.assertRaises(EnsureException, builder.mirror_in_faas, T.class_method, faas)
 
 if __name__ == '__main__':
     unittest.main()

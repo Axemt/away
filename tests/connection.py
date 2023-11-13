@@ -1,4 +1,5 @@
 from away import FaasConnection
+from away.exceptions import EnsureException, FaasServiceUnavailableException
 
 import unittest
 class TestConnection(unittest.TestCase):
@@ -9,12 +10,12 @@ class TestConnection(unittest.TestCase):
     def test_ensure_auth_fails(self):
         faas = FaasConnection(ensure_available=False)
 
-        self.assertRaises(Exception, faas.ensure_auth)
+        self.assertRaises(EnsureException, faas.ensure_auth)
 
     def test_ensure_fn_present(self):
 
         faas = FaasConnection(password=1234)
-        self.assertRaises(Exception, faas.ensure_fn_present, 'non_existent_function')
+        self.assertRaises(EnsureException, faas.ensure_fn_present, 'non_existent_function')
 
     def test_repr(self):
         faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False)
@@ -40,8 +41,8 @@ class TestConnection(unittest.TestCase):
 
         faas = FaasConnection(password=1234)
         faas.ensure_available()
-        faas = FaasConnection(provider='bogus', password=21413423, ensure_available=False)
-        self.assertRaises(Exception, faas.ensure_available)
+        faas = FaasConnection(provider='does_not_exist', password=21413423, ensure_available=False)
+        self.assertRaises(FaasServiceUnavailableException, faas.ensure_available)
 
 
 

@@ -2,6 +2,7 @@
 import requests
 
 from .FaasConnection import FaasConnection
+from .exceptions import FaasReturnedError
 
 import typing
 from typing import Callable, Any
@@ -41,7 +42,7 @@ def __builder_sync(function_name: str,
         if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
         if implicit_exception_handling:
             if res.status_code != 200:
-                raise Exception(f'Function returned non 200 code: {res.status_code}, {res.text}')
+                raise FaasReturnedError(f'Function returned non 200 code: {res.status_code}, {res.text}')
 
 
         r = res.text

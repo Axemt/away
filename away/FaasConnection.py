@@ -4,6 +4,8 @@ from requests.exceptions import ConnectionError
 import subprocess
 import os
 
+from .exceptions import FaasReturnedError, FaasServiceUnavailableException, EnsureException
+
 import warnings
 
 class FaasConnection():
@@ -53,11 +55,11 @@ class FaasConnection():
         try:
             r = requests.get(f'http://{self.address}/healthz')
             if r.status_code != 200:
-                raise Exception(f'FaaS \'healthz\ check failed: status_code={r.status_code}, r={r.text}')
+                raise EnsureException(f'FaaS \'healthz\ check failed: status_code={r.status_code}, r={r.text}')
         except ConnectionError:
             is_local = 'localhost' in self.address or '127.0.0.1' in self.address
 
-            raise ConnectionError(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
+            raise FaasServiceUnavailableException(f'The FaaS server at {self.address} is not available.'  + '\nCheck that the local Kubernetes cluster has a port forward active' if is_local else '')
 
     def is_available(self) -> bool:
         """
@@ -83,8 +85,8 @@ class FaasConnection():
         if res.status_code != 200:
 
             if res.status_code == 401:
-                raise Exception(f'OpenFaas server at {self.address} rejected credentials: {res.status_code}: {res.text}')
-            raise Exception(f'OpenFaaS server at {self.address} returned non 200 code: {res}; {res.text}')
+                raise FaasReturnedError(f'OpenFaas server at {self.address} rejected credentials: {res.status_code}: {res.text}')
+            raise FaasReturnedError(f'OpenFaaS server at {self.address} returned non 200 code: {res}; {res.text}')
 
 
         names = []
@@ -113,7 +115,7 @@ class FaasConnection():
         """
 
         if not self.check_fn_present(fn_name):
-            raise Exception(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}') 
+            raise EnsureException(f'Function {fn_name} not present in OpenFaas server {self}. Available Functions: {self.get_faas_functions()}') 
 
     def is_auth(self) -> bool:
         """
@@ -126,7 +128,7 @@ class FaasConnection():
         Checks if this FaasConnection is authenticated and raises an exception if not
         """
         if not self.is_auth():
-            raise Exception(f'OpenFaaS connection is not auth:\n{self}')
+            raise EnsureException(f'OpenFaaS connection is not auth:\n{self}')
 
     def create_from_template(self, registry_prefix, fn_name):
         """

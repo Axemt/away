@@ -2,7 +2,7 @@
 import requests
 
 from .FaasConnection import FaasConnection
-from .exceptions import FaasReturnedError
+from .exceptions import FaasReturnedError, FaasFunctionTimedOutError
 
 import typing
 from typing import Callable, Any
@@ -41,7 +41,10 @@ def __builder_sync(function_name: str,
 
         if verbose: print(f'[INFO]: Got {res}, implicit_exception_handling={implicit_exception_handling}')
         if implicit_exception_handling:
-            if res.status_code != 200:
+            if res.status_code == 502: # pragma: no cover
+                raise FaasFunctionTimedOutError(f'Function {function_name} timed out')
+
+            elif res.status_code != 200:
                 raise FaasReturnedError(f'Function returned non 200 code: {res.status_code}, {res.text}')
 
 

@@ -10,3 +10,7 @@ class EnsureException(Exception):
 class FaasServiceUnavailableException(Exception):
     def __init__(self, message):            
         super().__init__(message)
+
+class FaasFunctionTimedOutError(Exception):
+    def __init__(self, message):
+        super().__init__(message)

@@ -11,6 +11,7 @@ from yaml.representer import RepresenterError
 faas = FaasConnection(password='1234')
 
 import unittest
+
 class TestProtocol(unittest.TestCase):
     
     def test_is_repr_literal(self):
@@ -86,11 +87,17 @@ class TestProtocol(unittest.TestCase):
 
     def test_blank_deco_with_protocol(self):
 
+        @builder.publish(faas)
+        def mod(n, m):
+            return n % m
+
+        res_with_publish = mod(10, 2)
+
         @builder.faas_function_with_protocol(faas)
-        def fibb(n):
+        def mod(n, m):
             pass
         
-        self.assertEqual(fibb(10), 55)
+        self.assertEqual(mod(10, 2), res_with_publish)
 
 if __name__ == '__main__':
     unittest.main()

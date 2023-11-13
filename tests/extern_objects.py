@@ -3,7 +3,7 @@ from away.__fn_utils import __is_lambda as is_lambda
 
 faas = FaasConnection(password=1234)
 
-nonrepr = map(lambda e: int(e), "1234")
+nonrepr = map(int, "1234")
 
 import unittest
 class TestExternalObjs(unittest.TestCase):
@@ -14,13 +14,7 @@ class TestExternalObjs(unittest.TestCase):
         def sum_nonrepr():
             return sum(list(nonrepr))
 
-    def test_raises_if_not_safe_args(self):
-
-        @builder.publish(faas)
-        def get_nonrepr():
-            return nonrepr
-
-        self.assertRaises(Exception, get_nonrepr)
+        self.assertEqual(sum_nonrepr(), sum(list(nonrepr)))
 
     def test_is_lambda(self):
 

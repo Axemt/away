@@ -21,3 +21,8 @@ dependencies = [
     'asyncio',
     'pyyaml'
 ]
+
+[project.optional-dependencies]
+test = [
+    "coverage",
+]

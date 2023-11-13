@@ -68,7 +68,7 @@ class FaasConnection():
         try:
             self.ensure_available()
             return True
-        except:
+        except EnsureException:
             return False
 
     def get_faas_functions(self) -> [str]:

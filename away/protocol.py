@@ -1,6 +1,7 @@
 import yaml
 from typing import Callable, Any, Awaitable, Tuple, Iterable
 import inspect
+import warnings
 
 from .__fn_utils import __get_fn_source
 
@@ -41,7 +42,12 @@ def __pack_repr_or_protocol(var_obj: Any, safe_args: bool = False) -> str:
         safe_load_prefix_or = 'safe_' if safe_args else ''
         pack_fn = make_client_pack_args_fn(safe_args=safe_args)
         var_obj_yaml = pack_fn(var_obj).replace('\n', '\\n')
-        return f"yaml.{safe_load_prefix_or}load(\'{var_obj_yaml}\')"
+        packed_line = f'yaml.{safe_load_prefix_or}load("{var_obj_yaml}",Loader=yaml.Loader)'
+
+        if '!!python/name:' in packed_line:
+            warnings.warn(f'The object {var_obj} contains a member that may not be present in the handler namespace')
+
+        return packed_line
 
 def __is_repr_literal(var_obj: Any) -> bool:
 

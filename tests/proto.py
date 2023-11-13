@@ -74,5 +74,23 @@ class TestProtocol(unittest.TestCase):
 
         self.assertEqual(uses_outside_dep_lambda(1), 2)
 
+    def test_faas_from_str_with_protocol(self):
+
+        @builder.publish(faas)        
+        def sums_one(n):
+            return n + 1
+
+        faas_fn = builder.sync_from_faas_str_with_protocol('sums_one', faas)
+
+        self.assertEqual( sums_one(0), faas_fn(0) )
+
+    def test_blank_deco_with_protocol(self):
+
+        @builder.faas_function_with_protocol(faas)
+        def fibb(n):
+            pass
+        
+        self.assertEqual(fibb(10), 55)
+
 if __name__ == '__main__':
     unittest.main()

@@ -149,7 +149,8 @@ def faas_function(fn: Callable[[Any], Any], *args, **kwargs) -> Callable[[Any], 
 
     return builder_fn(fn, *args, **kwargs)
 
-def faas_function_with_protocol(fn: Callable[[Any], Any], safe_args: bool= True, *args, **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
+@parametrized
+def faas_function_with_protocol(fn: Callable[[Any], Any], *args, safe_args: bool = True, **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
     """
     Converts a blank function into an OpenFaaS function using away's protocol
 
@@ -166,12 +167,55 @@ def faas_function_with_protocol(fn: Callable[[Any], Any], safe_args: bool= True,
         pass
     
     """
-    client_pack_args = make_client_pack_args_fn(safe_args=safe_args)
-    client_unpack_args = make_client_pack_args_fn(safe_args=safe_args)
+    packer = make_client_pack_args_fn(safe_args)
+    unpacker = make_client_unpack_args_fn(safe_args)
 
-    return faas_function(fn, *args, pack_args=client_pack_args, unpack_args=client_unpack_args, **kwargs)
+    builder_fn = __from_faas_deco_async if inspect.iscoroutinefunction(fn) else __from_faas_deco_sync
 
-sync_from_faas_str_with_protocol = lambda *args, **kwargs: sync_from_faas_str(*args, )
+    return builder_fn(fn, *args, pack_args=packer, unpack_args=unpacker, **kwargs)
+
+def sync_from_faas_str_with_protocol(*args, safe_args: bool = True, **kwargs) -> Callable[[Any], Any]:
+    """
+    Creates an OpenFaaS sync function from a given name, using away's protocol by default
+    The decorator method is still recommended. This builder is intended for building functions with a name that already exists
+
+    This calls an OpenFaaS function synchronously in the given provider.
+
+    Usage:
+    faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
+
+    env = builder.sync_from_faas_str_with_protocol('env', faas)
+
+    res = env()
+    
+    """
+
+    return sync_from_faas_str(*args, 
+        pack_args=make_client_pack_args_fn(safe_args),
+        unpack_args=make_client_unpack_args_fn(safe_args),
+        **kwargs
+    )
+
+def async_from_faas_str_with_protocol(*args, safe_args: bool = True, **kwargs) -> Callable[[Any], Awaitable]:
+    """
+    Creates an OpenFaaS sync function from a given name, using away's protocol by default
+    The decorator method is still recommended. This builder is intended for building functions with a name that already exists
+
+    This calls an OpenFaaS function synchronously in the given provider using an async backend. 
+
+    Usage:
+    faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
+
+    env = builder.async_from_faas_str_with_protocol('env', faas)
+
+    res = env()
+    
+    """
+    return async_from_faas_str(*args,
+        pack_args=make_client_pack_args_fn(safe_args),
+        unpack_args=make_client_unpack_args_fn(safe_args),
+        **kwargs
+    )
 
 @parametrized
 def publish( 
@@ -197,7 +241,6 @@ def publish(
     
     """
     return mirror_in_faas(fn, faas, registry_prefix, safe_args, enable_dev_building, server_unpack_args, __from_deco=True, **kwargs)
-
 
 def mirror_in_faas( 
     fn: Callable[[Any], Any], 

@@ -13,7 +13,7 @@ from .common_utils import parametrized, pack_args
 def __builder_async(function_name: str,
     faas: FaasConnection,
     namespace: str  = '',
-    ensure_present: bool = True,
+    ensure_present: bool = False,
     implicit_exception_handling: bool = True,
     pack_args: Callable[[Any], str | dict ] = pack_args,
     unpack_args: Callable = lambda e: e,

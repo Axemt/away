@@ -88,6 +88,13 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
         _, status = await shasum_with_exceptions('hello')
         self.assertEqual(status, 200)
 
+    async def test_allows_nonauth_call(self):
+
+        faas = FaasConnection() # no password
+
+        env = builder.async_from_faas_str('env', faas)
+        await env()
+
 
 if __name__ == '__main__':
     unittest.main()

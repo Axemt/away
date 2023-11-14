@@ -108,6 +108,12 @@ class TestCalls(unittest.TestCase):
 
         self.assertEqual(res_deco, res_str)
 
+    def test_allows_nonauth_call(self):
+
+        faas = FaasConnection() # no password
+
+        env = builder.sync_from_faas_str('env', faas)
+        env()
 
 if __name__ == '__main__':
     unittest.main()

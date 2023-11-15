@@ -1,4 +1,3 @@
-set -e
 # Build and install
 python3 -m pip install .
 

@@ -245,6 +245,7 @@ def mirror_in_faas(
     registry_prefix: str ='localhost:5000', 
     safe_args: bool = True,
     annotations: dict[str, str] = {},
+    module_imports: list[str] = [],
     enable_dev_building: bool = False,
     server_unpack_args: Callable[[Any], Tuple] | None = None,
     __from_deco: bool = False,
@@ -273,10 +274,11 @@ def mirror_in_faas(
 
         faas.create_from_template(registry_prefix, fn_name)
 
+        has_to_use_protocol = server_unpack_args is None
         # TODO: handle possible imports in function?
 
         # Create unpacker if not provided
-        if server_unpack_args is None:
+        if has_to_use_protocol:
             if not safe_args:
                 warnings.warn('"safe_args"=False; This may expose your OpenFaaS instance to malicious call requests through python\'s "pickle" module. See {https://docs.python.org/3/library/pickle.html} for details')
             # Establish 'protocol': serialize and then back
@@ -289,9 +291,8 @@ def mirror_in_faas(
         # Create handler
         handler_source = __build_handler_template(fn, server_unpack_args,__from_deco=__from_deco)
 
-        if 'import yaml' in handler_source:
-            with open(f'{fn_name}/requirements.txt', 'a') as requirements:
-                requirements.write('pyyaml')
+        with open(f'{fn_name}/requirements.txt', 'a') as requirements:
+            if 'import yaml' in handler_source: requirements.write('pyyaml')
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)
@@ -301,12 +302,11 @@ def mirror_in_faas(
             description = yaml.load(stack, Loader=yaml.Loader)
         
             # 'tag' as built with protocol
-            annotations['built-with'] = 'away'
-            description['functions'][fn_name]['annotations'] = annotations
+            if has_to_use_protocol: annotations['built-with'] = 'away'
+            if annotations != {}: description['functions'][fn_name]['annotations'] = annotations
 
             stack.seek(0)
             stack.write(yaml.dump(description))
-
 
         faas.publish_from_yaml(fn_name)
 

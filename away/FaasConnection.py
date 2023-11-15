@@ -180,5 +180,5 @@ class FaasConnection():
         if res.status_code != 200:
             raise FaasReturnedError(res)
 
-        description = yaml.load(res.text)
+        description = yaml.load(res.text, Loader=yaml.Loader)
         return description.get('annotations', {})

@@ -51,11 +51,21 @@ def fibonacci(name):
 fibonacci(10) # returns (55, 200)
 ```
 
-### Using existing functions built using `away`
+### Using *existing* functions built using `away`
 
 First off that's great! This project is useful for someone!
 
-Use `away.protocol` to access the unpacking and packing functions to communicate with an already published function that used `away`'s default protocol.
+Use the family of functions `builder.*_with_protocol`:
+```python
+
+a_function = builder.sync_from_faas_str_with_protocol('a_function_name', faas)
+
+@builder.faas_function_with_protocol(faas)
+def some_function_in_faas():
+	pass
+```
+
+You can also use `away.protocol` to access the unpacking and packing functions to communicate with an already published function that used `away`'s default protocol for finer control.
 
 ```python
 from away import protocol

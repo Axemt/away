@@ -124,6 +124,33 @@ def use_unsafe_arg(rang):
 	return res
 ```
 
+### Function deployment: Extras
+
+#### Annotations
+To annotate a function, to for example bind to an Apache Kafka topic with the OpenFaaS Kafka connector, you can use the kwarg `annotations` to define your own. `annotations` should be of type `dict[str, str]`:
+```python
+@builder.publish(faas, annotations={'topic': 'my_topic', 'other_annotations': 'cool!'})
+def some_function(n):
+	...
+```
+
+#### Modules/imports
+if your function requires a library, use the kwarg `module_imports`. Note that you should make all required imports **inside** the body of the function:
+```python
+@builder.publish(faas, module_imports=['requests'])
+def uses_library(a):
+	import requests
+	...
+```
+
+Note that some libraries require a C compiler to install, such as `numpy`. To enable this behaviour, pass the kwarg `enable_dev_building=True`
+```python
+@builder.publish(faas, module_imports=['numpy'], enable_dev_building=True)
+def uses_np(a, b):
+	import numpy as np
+	...
+```
+
 ## Installation
 
 To install as a pip package run `python -m pip install .` from away’s main directory

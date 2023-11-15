@@ -1,8 +1,8 @@
-
 import requests
 from requests.exceptions import ConnectionError
 import subprocess
 import os
+import yaml
 
 from .exceptions import FaasReturnedError, FaasServiceUnavailableException, EnsureException
 
@@ -163,3 +163,16 @@ class FaasConnection():
             ['faas', 'up', '--gateway', f'http://{self.address}', '--yaml', f'{fn_name}.yml'],
             check=True
         )
+
+    def get_function_annotations(self, fn_name):
+
+        self.ensure_auth()
+        
+        endpoint = f'http://{self.auth_address}/system/function/{fn_name}?usage=1'
+        res = requests.get(endpoint, headers={'Content-Type' : 'application/json'})
+
+        if res.status_code != 200:
+            raise FaasReturnedError(res)
+
+        description = yaml.load(res.text)
+        return description.get('annotations', {})

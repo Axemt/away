@@ -221,10 +221,7 @@ def async_from_faas_str_with_protocol(*args, safe_args: bool = True, **kwargs) -
 def publish( 
     fn: Callable[[Any], Any], 
     faas: FaasConnection,
-    registry_prefix: str ='localhost:5000', 
-    safe_args: bool = True,
-    enable_dev_building: bool = False,
-    server_unpack_args: Callable[[Any], Tuple] | None = None,
+    *args,
     **kwargs) -> Callable[[Any], Any] | Callable[[Any], Awaitable]:
     """
     Publishes the wrapped function to an OpenFaaS server
@@ -240,13 +237,14 @@ def publish(
 
     
     """
-    return mirror_in_faas(fn, faas, registry_prefix, safe_args, enable_dev_building, server_unpack_args, __from_deco=True, **kwargs)
+    return mirror_in_faas(fn, faas, *args, __from_deco=True, **kwargs)
 
 def mirror_in_faas( 
     fn: Callable[[Any], Any], 
     faas: FaasConnection,
     registry_prefix: str ='localhost:5000', 
     safe_args: bool = True,
+    annotations: dict[str, str] = {},
     enable_dev_building: bool = False,
     server_unpack_args: Callable[[Any], Tuple] | None = None,
     __from_deco: bool = False,
@@ -297,6 +295,17 @@ def mirror_in_faas(
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)
+
+        
+        with open(f'{fn_name}.yml', 'r+') as stack:
+            description = yaml.load(stack, Loader=yaml.Loader)
+        
+            # 'tag' as built with protocol
+            annotations['built-with'] = 'away'
+            description['functions'][fn_name]['annotations'] = annotations
+
+            stack.seek(0)
+            stack.write(yaml.dump(description))
 
 
         faas.publish_from_yaml(fn_name)

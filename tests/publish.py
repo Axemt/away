@@ -131,6 +131,21 @@ class TestCalls(unittest.TestCase):
         # The same function built with the default safe_args raises an error
         self.assertRaises( RepresenterError, sum_all_numbers, unsafe_arg )
 
+    def test_publishes_with_annotations(self):
+
+        def none():
+            pass
+
+        builder.mirror_in_faas(none, faas)
+
+        none_annotations = faas.get_function_annotations('none')
+        self.assertTrue('built-with' in none_annotations)
+
+        builder.mirror_in_faas(none, faas, annotations={'topic' : 'my_topic'})
+
+        none_annotations = faas.get_function_annotations('none')
+        self.assertTrue('topic' in none_annotations)
+
 
 if __name__ == '__main__':
     unittest.main()

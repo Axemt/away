@@ -44,7 +44,13 @@ class TestConnection(unittest.TestCase):
         faas = FaasConnection(provider='does_not_exist', password=21413423, ensure_available=False)
         self.assertRaises(FaasServiceUnavailableException, faas.ensure_available)
 
+    def test_get_annotations(self):
 
+        faas = FaasConnection(password=1234)
+        annotations = faas.get_function_annotations('shasum')
+
+        unauth_faas = FaasConnection()
+        self.assertRaises(EnsureException, unauth_faas.get_function_annotations, 'shasum')
 
 if __name__ == '__main__':
     unittest.main()

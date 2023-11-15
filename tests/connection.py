@@ -52,5 +52,11 @@ class TestConnection(unittest.TestCase):
         unauth_faas = FaasConnection()
         self.assertRaises(EnsureException, unauth_faas.get_function_annotations, 'shasum')
 
+    def test_is_away_protocol(self):
+
+        faas = FaasConnection(password=1234)
+
+        self.assertTrue(not faas.is_away_protocol('shasum'))
+
 if __name__ == '__main__':
     unittest.main()

@@ -165,7 +165,7 @@ class FaasConnection():
             check=True
         )
 
-    def get_function_annotations(self, fn_name):
+    def get_function_annotations(self, fn_name) -> dict[str, str]:
         """
         Get a function's annotations, as described in its yaml file
 
@@ -182,3 +182,13 @@ class FaasConnection():
 
         description = yaml.load(res.text, Loader=yaml.Loader)
         return description.get('annotations', {})
+
+    def is_away_protocol(self, fn_name) -> bool:
+        """
+        Returns if a function was built with away's protocol, i.e: if it contains the annotation marking it as such
+
+        arguments:
+            fn_name: The name of the function in the OpenFaaS provider
+        """
+        annotations = self.get_function_annotations(fn_name)
+        return 'built-with' in annotations and annotations['built-with'] == 'away'

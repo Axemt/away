@@ -99,5 +99,15 @@ class TestProtocol(unittest.TestCase):
         
         self.assertEqual(mod(10, 2), res_with_publish)
 
+    def test_is_away_protocol(self):
+
+        @builder.publish(faas)
+        def none():
+            pass
+
+        self.assertTrue(faas.is_away_protocol('none'))
+
+
+
 if __name__ == '__main__':
     unittest.main()

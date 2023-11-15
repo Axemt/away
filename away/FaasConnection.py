@@ -76,6 +76,7 @@ class FaasConnection():
         Queries the given OpenFaaS server for available functions
         Is equivalent to curl -s -X GET http://<faas_endpoint>/system/functions and getting function names
         """
+        self.ensure_auth()
 
         res = requests.get(
             f'http://{self.auth_address}/system/functions',
@@ -165,7 +166,12 @@ class FaasConnection():
         )
 
     def get_function_annotations(self, fn_name):
+        """
+        Get a function's annotations, as described in its yaml file
 
+        arguments:
+            fn_name: The name of the function in the OpenFaaS provider
+        """
         self.ensure_auth()
         
         endpoint = f'http://{self.auth_address}/system/function/{fn_name}?usage=1'

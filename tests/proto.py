@@ -81,7 +81,7 @@ class TestProtocol(unittest.TestCase):
         def sums_one(n):
             return n + 1
 
-        faas_fn = builder.sync_from_faas_str_with_protocol('sums_one', faas)
+        faas_fn = builder.sync_from_name_with_protocol('sums_one', faas)
 
         self.assertEqual( sums_one(0), faas_fn(0) )
 

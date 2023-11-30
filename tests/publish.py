@@ -109,7 +109,7 @@ class TestCalls(unittest.TestCase):
     
     def test_compatible_with_from_str(self):
 
-        sum_one_but_from_str = builder.sync_from_faas_str('sum_one', faas, pack_args=client_pack_args, unpack_args=client_unpack_args, verbose=True)
+        sum_one_but_from_str = builder.sync_from_name('sum_one', faas, pack_args=client_pack_args, unpack_args=client_unpack_args, verbose=True)
 
         self.assertEqual(sum_one(0), 1)
         self.assertEqual(sum_one_but_from_str(0), 1)

@@ -88,7 +88,7 @@ def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any]
     return __builder_sync(function_name, *args, **kwargs)
 
 
-def from_faas_str(*args, **kwargs) -> Callable[[Any], Any]:
+def from_name(*args, **kwargs) -> Callable[[Any], Any]:
     """
     Creates an OpenFaaS sync function from a given name
     The decorator method is still recommended. This builder is intended for building functions with a name that already exists
@@ -100,7 +100,7 @@ def from_faas_str(*args, **kwargs) -> Callable[[Any], Any]:
     Usage:
     faas = FaasConnection('my_faas_server.endpoint.com', port=1234, user='a', password='12345')
 
-    env = builder.sync_from_faas_str('env', faas)
+    env = builder.sync_from_name('env', faas)
 
     res = env()
     

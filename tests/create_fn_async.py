@@ -24,13 +24,13 @@ shasum_unpack = lambda e: e.strip().replace(' ','').replace('-','')
 async def shasum(s):
     pass
 
-shasum_faas_sync = builder.sync_from_faas_str('shasum',
+shasum_faas_sync = builder.sync_from_name('shasum',
     faas, 
     verbose=True, 
     unpack_args=shasum_unpack
 )
 
-sleep_faas_async = builder.async_from_faas_str('sleep', faas, verbose=True)
+sleep_faas_async = builder.async_from_name('sleep', faas, verbose=True)
 
 
 import unittest
@@ -84,7 +84,7 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
 
     async def test_exceptions(self):
 
-        shasum_with_exceptions = builder.async_from_faas_str('shasum', faas, verbose=True, implicit_exception_handling=False, unpack_args=shasum_unpack)
+        shasum_with_exceptions = builder.async_from_name('shasum', faas, verbose=True, implicit_exception_handling=False, unpack_args=shasum_unpack)
         _, status = await shasum_with_exceptions('hello')
         self.assertEqual(status, 200)
 
@@ -92,7 +92,7 @@ class TestCalls(unittest.IsolatedAsyncioTestCase):
 
         faas = FaasConnection() # no password
 
-        env = builder.async_from_faas_str('env', faas)
+        env = builder.async_from_name('env', faas)
         await env()
 
 

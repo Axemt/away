@@ -32,19 +32,19 @@ def env():
 def nslookup(host):
     pass
 
-shasum_from_str = builder.sync_from_faas_str('shasum',
+shasum_from_str = builder.sync_from_name('shasum',
         faas,
         unpack_args=lambda e: e.strip().replace(' ','').replace('-',''),
         verbose=True
     )
 
-nslookup_from_str = builder.sync_from_faas_str('nslookup',
+nslookup_from_str = builder.sync_from_name('nslookup',
         faas,
         implicit_exception_handling=False,
         verbose=True
     )
 
-env_from_str = builder.sync_from_faas_str('env',
+env_from_str = builder.sync_from_name('env',
         faas,
         implicit_exception_handling=False,
         verbose=True
@@ -112,7 +112,7 @@ class TestCalls(unittest.TestCase):
 
         faas = FaasConnection() # no password
 
-        env = builder.sync_from_faas_str('env', faas)
+        env = builder.sync_from_name('env', faas)
         env()
 
 if __name__ == '__main__':

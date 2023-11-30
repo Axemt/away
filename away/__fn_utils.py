@@ -5,8 +5,6 @@ import warnings
 
 from .exceptions import EnsureException
 
-from .exceptions import EnsureException
-
 def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
     source_fn_arr = inspect.getsource(source_fn).split('\n')
     is_lambda = __is_lambda(source_fn)

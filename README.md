@@ -37,7 +37,7 @@ res = await fibonacci(10) # calls the function asynchronously in the background,
 
 You can also create a function from a name, to for example avoid shadowing a local variable
 ```python
-fibonacci_with_a_different_name = builder.sync_from_faas_str(’fibonacci’, faas)
+fibonacci_with_a_different_name = builder.sync_from_name(’fibonacci’, faas)
 fibonacci_with_a_different_name(55) # returns 139583862445
 ```
 
@@ -58,7 +58,7 @@ First off that's great! This project is useful for someone!
 Use the family of functions `builder.*_with_protocol`:
 ```python
 
-a_function = builder.sync_from_faas_str_with_protocol('a_function_name', faas)
+a_function = builder.sync_from_name_with_protocol('a_function_name', faas)
 
 @builder.faas_function_with_protocol(faas)
 def some_function_in_faas():

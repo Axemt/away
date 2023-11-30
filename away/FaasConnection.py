@@ -32,7 +32,7 @@ class FaasConnection():
             if has_password != has_user:
                 warnings.warn('Only one of [user, password] present, but not the other. auth will be blank', Warning)
 
-    def __cli_login(self, user, password):
+    def __cli_login(self, user: str, password: str | int):
         """
         Authenticates with the OpenFaaS server via CLI
         """
@@ -131,7 +131,7 @@ class FaasConnection():
         if not self.is_auth():
             raise EnsureException(f'OpenFaaS connection is not auth:\n{self}')
 
-    def create_from_template(self, registry_prefix, fn_name):
+    def create_from_template(self, registry_prefix: str, fn_name: str):
         """
         Creates the files for an OpenFaaS templated function 
 
@@ -152,7 +152,7 @@ class FaasConnection():
             check=True
         )
 
-    def publish_from_yaml(self, fn_name):
+    def publish_from_yaml(self, fn_name: str):
         """
         Publishes a function, with an existing folder and .yaml file to this OpenFaaS instance
 
@@ -165,7 +165,7 @@ class FaasConnection():
             check=True
         )
 
-    def get_function_annotations(self, fn_name) -> dict[str, str]:
+    def get_function_annotations(self, fn_name: str) -> dict[str, str]:
         """
         Get a function's annotations, as described in its yaml file
 
@@ -183,7 +183,7 @@ class FaasConnection():
         description = yaml.load(res.text, Loader=yaml.Loader)
         return description.get('annotations', {})
 
-    def is_away_protocol(self, fn_name) -> bool:
+    def is_away_protocol(self, fn_name: str) -> bool:
         """
         Returns if a function was built with away's protocol, i.e: if it contains the annotation marking it as such
 

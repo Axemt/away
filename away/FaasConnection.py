@@ -165,6 +165,21 @@ class FaasConnection():
             check=True
         )
 
+    def remove_fn(self, fn_name: str):
+        """
+        Attempts to remove a function in this server instance by the name <fn_name>
+        Requires auth privileges
+
+        arguments:
+            fn_name: The name of the function to delete
+        """
+        self.ensure_auth()
+
+        subprocess.run(
+            ['faas', 'remove', fn_name],
+            check=True
+        )
+
     def get_function_annotations(self, fn_name: str) -> dict[str, str]:
         """
         Get a function's annotations, as described in its yaml file

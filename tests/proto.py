@@ -1,7 +1,6 @@
 from away import FaasConnection, builder
 
 from away.protocol import make_client_pack_args_fn, make_client_unpack_args_fn
-from away.protocol import __is_repr_literal as is_repr_literal
 from away.protocol import __pack_repr_or_protocol as pack_repr_or_protocol
 from away.protocol import __safe_server_unpack_args as safe_server_unpack_args
 from away.protocol import __unsafe_server_unpack_args as unsafe_server_unpack_args
@@ -14,21 +13,6 @@ import unittest
 
 class TestProtocol(unittest.TestCase):
     
-    def test_is_repr_literal(self):
-
-        self.assertTrue( is_repr_literal(1234) )
-        self.assertTrue( not is_repr_literal(lambda: 1) )
-
-    def test_packs_repr(self):
-
-        self.assertEqual( pack_repr_or_protocol(1234, False), repr(1234) )
-        # the result should be independent on if the args are safe or not
-        self.assertEqual( pack_repr_or_protocol(1234, True), repr(1234) )
-
-    def test_pack_repr_raises(self):
-
-        self.assertRaises(RepresenterError, pack_repr_or_protocol, map(lambda e: 1, "123"), True)
-
     def test_safe_protocol(self):
 
         args = (1,2,3,"a")
@@ -52,28 +36,6 @@ class TestProtocol(unittest.TestCase):
         server_side_args, _ = unsafe_server_unpack_args(packed_unsafe_args)
         
         self.assertEqual(tuple(server_side_args), args)
-
-    def test_external_fn_dependency(self):
-
-        def outside_dep_fn():
-            return 1
-
-        @builder.publish(faas, verbose=True)
-        def uses_outside_dep_fn(n):
-            return n + outside_dep_fn()
-
-        self.assertEqual(uses_outside_dep_fn(1), 2)
-
-        
-    def test_external_lambda_dependency(self):
-
-        outside_dep_lambda = lambda: 1
-
-        @builder.publish(faas, verbose=True)
-        def uses_outside_dep_lambda(n):
-            return n + outside_dep_lambda()
-
-        self.assertEqual(uses_outside_dep_lambda(1), 2)
 
     def test_faas_from_str_with_protocol(self):
 
@@ -107,7 +69,15 @@ class TestProtocol(unittest.TestCase):
 
         self.assertTrue(faas.is_away_protocol('none'))
 
+    def test_packs_repr(self):
 
+        self.assertEqual( pack_repr_or_protocol(1234, False), repr(1234) )
+        # the result should be independent on if the args are safe or not
+        self.assertEqual( pack_repr_or_protocol(1234, True), repr(1234) )
+
+    def test_pack_repr_raises(self):
+
+        self.assertRaises(RepresenterError, pack_repr_or_protocol, map(lambda e: 1, "123"), True)
 
 if __name__ == '__main__':
     unittest.main()

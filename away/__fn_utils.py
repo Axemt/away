@@ -27,6 +27,10 @@ def __get_fn_source(source_fn: Callable[[Any], Any], __from_deco: bool=False):
 
 __is_lambda = lambda fn: inspect.isfunction(fn) and fn.__name__ == '<lambda>'
 
+def __is_away_fn(fn: Callable[[Any], Any]) -> bool:
+
+    return hasattr(fn, '__is_away__')
+
 def __is_stateless(fn: Callable[[Any], Any]) -> bool:
     # This is probably not the best way to check if a function is stateful,
     #   maybe it just happens to take an arg named 'self'...
@@ -97,6 +101,8 @@ def __expand_dependency_item(
     return res
 
 def __get_all_modules_mentioned(fn: Callable[[Any], Any]) -> [str]:
+    warnings.warn('EXPERIMENTAL: Programatic module inclusion is experimental')
+
 
     with open(fn.__code__.co_filename) as f:
         lines_with_import_str = ''.join([line for line in f.readlines() if 'import' in line])

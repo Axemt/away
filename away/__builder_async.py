@@ -61,6 +61,7 @@ def __builder_async(function_name: str,
         return (await asyncio.gather(res_fut))[0]
 
     faas_fn.__name__ = f'{function_name}_faas_fn_async'
+    faas_fn.__is_away__ = True
     return faas_fn
 
 

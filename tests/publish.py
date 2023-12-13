@@ -146,6 +146,10 @@ class TestCalls(unittest.TestCase):
         none_annotations = faas.get_function_annotations('none')
         self.assertTrue('topic' in none_annotations)
 
+    @classmethod
+    def tearDownClass(cls):
+        for name in ['nothing', 'sum_from_range', 'return_the_global', 'return_the_nonlocal', 'sum_all_numbers', 'sum_some_numbers', 'sum_one', 'blank', 'should_be_sync_in_server', 'none']:
+            faas.remove_fn(name)
 
 if __name__ == '__main__':
     unittest.main()

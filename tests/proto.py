@@ -64,10 +64,10 @@ class TestProtocol(unittest.TestCase):
     def test_is_away_protocol(self):
 
         @builder.publish(faas)
-        def none():
+        def empty():
             pass
 
-        self.assertTrue(faas.is_away_protocol('none'))
+        self.assertTrue(faas.is_away_protocol('empty'))
 
     def test_packs_repr(self):
 
@@ -78,6 +78,11 @@ class TestProtocol(unittest.TestCase):
     def test_pack_repr_raises(self):
 
         self.assertRaises(RepresenterError, pack_repr_or_protocol, map(lambda e: 1, "123"), True)
+
+    @classmethod
+    def tearDownClass(cls):
+        for name in ['empty', 'mod', 'sums_one']:
+            faas.remove_fn(name)
 
 if __name__ == '__main__':
     unittest.main()

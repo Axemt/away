@@ -28,5 +28,9 @@ class TestStateless(unittest.TestCase):
 
         self.assertRaises(EnsureException, builder.mirror_in_faas, T.class_method, faas)
 
+    @classmethod
+    def tearDownClass(cls):
+        faas.remove_fn('static_fn_part_of_class')
+
 if __name__ == '__main__':
     unittest.main()

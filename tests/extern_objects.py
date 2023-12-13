@@ -39,9 +39,18 @@ class TestExternalObjs(unittest.TestCase):
 
         self.assertEqual(uses_chain(), secret)
 
+    def test_external_modules(self):
+
+        @builder.publish(faas, module_imports=['numpy'])
+        def ret_pi():
+            import numpy as np
+            return np.pi
+
+        ret_pi()
+
     @classmethod
     def tearDownClass(cls):
-        for name in ['uses_chain', 'sum_nonrepr']:
+        for name in ['uses_chain', 'sum_nonrepr', 'ret_pi']:
             faas.remove_fn(name)
 
 if __name__ == '__main__':

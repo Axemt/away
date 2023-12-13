@@ -318,7 +318,7 @@ def mirror_in_faas(
             if 'import yaml' in handler_source: requirements.write('pyyaml\n')
             if 'import requests' in handler_source: requirements.write('requests\n')
             for dep in module_imports:
-                requirements.write(dep)
+                requirements.write(dep+'\n')
 
         with open(f'{fn_name}/handler.py', 'w') as handler:
             handler.write(handler_source)

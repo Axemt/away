@@ -160,8 +160,8 @@ def __build_intracluster_proxy(faas_fn: Callable[[Any], Any]) -> Callable[[Any],
 
     return intracluster_proxy
 
+@experimental(reason='Programatic module inclusion is experimental')
 def __get_all_modules_mentioned(fn: Callable[[Any], Any]) -> [str]:
-
 
     with open(fn.__code__.co_filename) as f:
         lines_with_import_str = ''.join([line for line in f.readlines() if 'import' in line])

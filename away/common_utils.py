@@ -1,3 +1,4 @@
+import warnings
 def parametrized(dec):
     def layer(*args, **kwargs):
         def repl(f):
@@ -11,3 +12,11 @@ def pack_args(args):
     if len(args) > 0: args=''.join([str(e) for e in args])
 
     return args
+
+@parametrized
+def experimental(fn, reason=''):
+    def exp(*args, **kwargs):
+        warnings.warn(f'[EXPERIMENTAL]: function {fn.__name__} is experimental' + f'. Reason: {reason}' if reason != '' else '')
+        return fn(*args, **kwargs)
+    
+    return exp

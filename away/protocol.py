@@ -26,11 +26,36 @@ def __unsafe_server_unpack_args(req): # pragma: no cover
 
     return args, len(args)
 
+def __safe_server_pack_args(req): # pragma: no cover
+    import yaml
+    args =  yaml.safe_dump(req)
+    return args
+
+def __unsafe_server_pack_args(req): # pragma: no cover
+    import yaml
+    args =  yaml.dump(req)
+    return args
+
 def make_client_pack_args_fn(safe_args: bool = True) -> Callable[[Iterable[Any]], str]: 
-    return (lambda it: yaml.safe_dump(it)) if safe_args else (lambda it: yaml.dump(it))
+
+    # NOTE: Why does this have this very particular structure?
+    #        this if-else block and particular variable assign and then return helps implement intra-cluster
+    #        dependencies due to the dependency expansion engine, which will take the below line literally and 
+    #        include it in the intracluster proxy. I'd love to have it be more elegant :)
+    if safe_args: 
+        pack_args = lambda it: yaml.safe_dump(it)
+    else:
+        pack_args = lambda it: yaml.dump(it)
+
+    return pack_args
 
 def make_client_unpack_args_fn(safe_args: bool = True) -> Callable[[str], Tuple[Any]]: 
-    return (lambda st: yaml.safe_load(st)) if safe_args else (lambda st: yaml.load(st, Loader=yaml.Loader))
+    if safe_args:
+        unpack_args = lambda st: yaml.safe_load(st)
+    else:
+        unpack_args = lambda st: yaml.load(st, Loader=yaml.Loader)
+
+    return unpack_args
 
 def __pack_repr_or_protocol(var_obj: Any, safe_args: bool = False) -> str:
 

@@ -176,7 +176,7 @@ class FaasConnection():
         self.ensure_auth()
 
         subprocess.run(
-            ['faas', 'remove', fn_name],
+            ['faas', 'remove', fn_name.replace('_', '-')],
             check=True
         )
 

@@ -65,7 +65,7 @@ def __builder_sync(function_name: str,
     #        this means if this function is, for example, serialized and then used in a dependency of another 
     #        function deployed to the same faas instance, it will not be identified as deployed 
     #        in the same cluster
-    faas_fn.__faas_id__ = faas.id
+    faas_fn.__faas_id__ = hash(faas)
     # The deployment names are expected to be the default ones
     faas_fn.__faas_croscall_endpoint__ = f'http://gateway.openfaas.svc.cluster.local.:8080/function/{function_name+namespace}'
     return faas_fn

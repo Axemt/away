@@ -179,12 +179,8 @@ class FaasConnection():
 
         # Build with faas cli
         subprocess.run(
-            ['faas', 'build', '--yaml', f'{fn_name}.yml'],
+            ['faas', 'up', '--gateway', f'http://{self.address}', '--yaml', f'{fn_name}.yml'],
             check=True
-        )
-        # Deploy
-        subprocess.run(
-            ['faas', 'deploy', '-f', f'{fn_name}.yml', '--gateway', f'http://{self.address}']
         )
 
     def remove_fn(self, fn_name: str):

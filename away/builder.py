@@ -25,6 +25,7 @@ from .__builder_sync import from_name as sync_from_name
 from .__builder_async import from_name as async_from_name
 
 from .protocol import __safe_server_unpack_args, __unsafe_server_unpack_args
+from .protocol import __safe_server_pack_args, __unsafe_server_pack_args
 from .protocol import make_client_pack_args_fn, make_client_unpack_args_fn
 
 from .FaasConnection import FaasConnection
@@ -33,9 +34,10 @@ from .FaasConnection import FaasConnection
 #  and checks in the published function
 HANDLER_TEMPLATE = '''
 # Built with Away version {} on {}
-{}
 
 # Args unpacker
+{}
+# Args packer
 {}
 # Captured dependencies at build time
 {}
@@ -55,19 +57,25 @@ def handle(req):
     {} = args_bundle
     
     # Call
-    return {}({})
+    res = {}({})
+
+    # Pack and send back
+    return {}(res)
+
 '''
 
 def __build_handler_template(
     source_fn: Callable,
-    server_unpack_args: Callable,
-    __from_deco=False) -> str:
+    server_unpack_args: Callable[[str], Iterable],
+    server_pack_args: Callable[[Iterable[Any]], str],
+    faas_id: int,
+    from_deco=False) -> str:
     """
     Populates `HANDLER_TEMPLATE` with the decorated function, appropriate arg unpacking and checks
     """
     fn_args = inspect.getfullargspec(source_fn).args
 
-    captured_vars_txt = __get_external_dependencies(source_fn, from_deco=__from_deco)
+    captured_vars_txt = __get_external_dependencies(source_fn, faas_id, from_deco=from_deco)
 
     if captured_vars_txt != '':
         warnings.warn(f'[WARN]: The function {source_fn.__name__} uses variables outside function scope in function body. These will be statically assigned to their current values because OpenFaaS functions are stateless', SyntaxWarning) 
@@ -81,19 +89,22 @@ def __build_handler_template(
     if fn_arg_names == '':
         fn_arg_names = '_'
 
-    source_fn_txt = __get_fn_source(source_fn, __from_deco=__from_deco)
+    source_fn_txt = __get_fn_source(source_fn, from_deco=from_deco)
 
     server_unpack_args_txt = inspect.getsource(server_unpack_args).replace('\t\t','')
-    
+    server_pack_args_txt = inspect.getsource(server_pack_args).replace('\t\t','')
+
     handler = __format_handler_template(
         server_unpack_args_txt,
+        server_pack_args_txt,
         source_fn_txt,
         captured_vars_txt,
         fn_args_n,
         server_unpack_args.__name__,
         fn_arg_names,
         source_fn.__name__,
-        fn_arg_names if not noargs else ''
+        fn_arg_names if not noargs else '',
+        server_pack_args.__name__,
     )
 
 
@@ -102,13 +113,15 @@ def __build_handler_template(
 
 def __format_handler_template(
     server_unpack_args,
+    server_pack_args,
     source_fn,
     captured_vars,
     fn_args_n,
     server_unpack_args_name,
     fn_arg_names,
     source_fn_name,
-    fn_args_names) -> str:
+    fn_args_names,
+    server_pack_args_name) -> str:
     """
     Formats HANDLER TEMPLATE. Separated for convenience, readability and the ability to add default information
     """
@@ -116,15 +129,16 @@ def __format_handler_template(
     return HANDLER_TEMPLATE.format(
         version('away'),
         ctime(), # add version information by default
-        '# protocol unpacker\nimport yaml\n' if 'yaml.' in captured_vars else '',
         server_unpack_args,
-        captured_vars,
+        server_pack_args,
+        '' if len(captured_vars) == 0 else '# required to resolve captured dependencies\nimport yaml\n' + captured_vars,
         source_fn,
         fn_args_n,
         server_unpack_args_name,
         fn_arg_names,
         source_fn_name,
-        fn_args_names
+        fn_args_names,
+        server_pack_args_name
     )
 
 @parametrized
@@ -172,7 +186,9 @@ def faas_function_with_protocol(fn: Callable[[Any], Any], *args, safe_args: bool
 
     builder_fn = __from_faas_deco_async if inspect.iscoroutinefunction(fn) else __from_faas_deco_sync
 
-    return builder_fn(fn, *args, pack_args=packer, unpack_args=unpacker, **kwargs)
+    fn = builder_fn(fn, *args, pack_args=packer, unpack_args=unpacker, **kwargs)
+    __add_protocol_marker_attrs(fn, safe_args)
+    return fn
 
 def sync_from_name_with_protocol(*args, safe_args: bool = True, **kwargs) -> Callable[[Any], Any]:
     """
@@ -190,11 +206,13 @@ def sync_from_name_with_protocol(*args, safe_args: bool = True, **kwargs) -> Cal
     
     """
 
-    return sync_from_name(*args, 
+    fn = sync_from_name(*args, 
         pack_args=make_client_pack_args_fn(safe_args),
         unpack_args=make_client_unpack_args_fn(safe_args),
         **kwargs
     )
+    __add_protocol_marker_attrs(fn, safe_args)
+    return fn
 
 def async_from_name_with_protocol(*args, safe_args: bool = True, **kwargs) -> Callable[[Any], Awaitable]:
     """
@@ -211,11 +229,14 @@ def async_from_name_with_protocol(*args, safe_args: bool = True, **kwargs) -> Ca
     res = env()
     
     """
-    return async_from_name(*args,
+    fn = async_from_name(*args,
         pack_args=make_client_pack_args_fn(safe_args),
         unpack_args=make_client_unpack_args_fn(safe_args),
         **kwargs
     )
+    
+    __add_protocol_marker_attrs(fn, safe_args)
+    return fn
 
 @parametrized
 def publish( 
@@ -247,7 +268,8 @@ def mirror_in_faas(
     annotations: dict[str, str] = {},
     module_imports: list[str] = [],
     enable_dev_building: bool = False,
-    server_unpack_args: Callable[[Any], Tuple] | None = None,
+    server_unpack_args: Callable[[str], Tuple] | None = None,
+    server_pack_args: Callable[[Iterable[Any]], str] | None = None,
     __from_deco: bool = False,
     **kwargs) -> Callable[[Any], Any]:
     """
@@ -274,25 +296,27 @@ def mirror_in_faas(
 
         faas.create_from_template(registry_prefix, fn_name)
 
-        has_to_use_protocol = server_unpack_args is None
+        has_to_use_protocol = server_unpack_args is None and server_pack_args is None
         # TODO: handle possible imports in function?
 
         # Create unpacker if not provided
         if has_to_use_protocol:
             if not safe_args:
-                warnings.warn('"safe_args"=False; This may expose your OpenFaaS instance to malicious call requests through python\'s "pickle" module. See {https://docs.python.org/3/library/pickle.html} for details')
+                warnings.warn(f'"safe_args"={safe_args}; This may expose your OpenFaaS instance to malicious call requests through python\'s "pickle" module. See https://docs.python.org/3/library/pickle.html for details')
             # Establish 'protocol': serialize and then back
             server_unpack_args = __safe_server_unpack_args if safe_args else __unsafe_server_unpack_args
+            server_pack_args = __safe_server_pack_args if safe_args else __unsafe_server_pack_args
 
             client_pack_args = make_client_pack_args_fn(safe_args=safe_args)
-
             client_unpack_args = make_client_unpack_args_fn(safe_args=safe_args)
 
         # Create handler
-        handler_source = __build_handler_template(fn, server_unpack_args,__from_deco=__from_deco)
+        faas_id = hash(faas)
+        handler_source = __build_handler_template(fn, server_unpack_args, server_pack_args, faas_id, from_deco=__from_deco)
 
         with open(f'{fn_name}/requirements.txt', 'a') as requirements:
-            if 'import yaml' in handler_source: requirements.write('pyyaml')
+            if 'import yaml' in handler_source: requirements.write('pyyaml\n')
+            if 'import requests' in handler_source: requirements.write('requests\n')
             for dep in module_imports:
                 requirements.write(dep)
 
@@ -329,4 +353,9 @@ def mirror_in_faas(
 
     fn = create_fn(fn_name, faas, pack_args=client_pack_args, unpack_args=client_unpack_args, **kwargs)
 
+    if has_to_use_protocol: __add_protocol_marker_attrs(fn, safe_args)
+
     return fn
+
+def __add_protocol_marker_attrs(fn: Callable[[Any], Any], is_safe_args: bool):
+    fn.__away_protocol_is_safe__ = is_safe_args

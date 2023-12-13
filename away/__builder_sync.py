@@ -61,8 +61,13 @@ def __builder_sync(function_name: str,
         else:
             return (r, res.status_code)   
     
-    faas_fn.__name__ = f'{function_name}_faas_fn_sync'
-    faas_fn.__is_away__ = True
+    # NOTE: This signature is only guaranteed to be the same across python instances.
+    #        this means if this function is, for example, serialized and then used in a dependency of another 
+    #        function deployed to the same faas instance, it will not be identified as deployed 
+    #        in the same cluster
+    faas_fn.__faas_id__ = faas.id
+    # The deployment names are expected to be the default ones
+    faas_fn.__faas_croscall_endpoint__ = f'http://gateway.openfaas.svc.cluster.local.:8080/function/{function_name+namespace}'
     return faas_fn
 
 def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any], Any]:
@@ -85,7 +90,6 @@ def from_faas_deco(fn: Callable[[str], None], *args, **kwargs) -> Callable[[Any]
     """
 
     function_name = fn.__name__
-
     return __builder_sync(function_name, *args, **kwargs)
 
 

@@ -55,6 +55,9 @@ class TestRecursives(unittest.TestCase):
 
         interlocking(10)
 
+    @classmethod
+    def tearDownClass(cls):
+        faas.remove_fn('interlocking_fn_b')
 
 if __name__ == '__main__':
     unittest.main()

@@ -18,6 +18,10 @@ class TestMirrors(unittest.TestCase):
 
         self.assertEqual( add_secret_number([1,2,3]), add_secret_number_in_faas([1,2,3]) )
 
+    @classmethod
+    def tearDownClass(cls):
+        faas.remove_fn('add_secret_number')
+
 
 if __name__ == '__main__':
     unittest.main()

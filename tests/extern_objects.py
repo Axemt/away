@@ -39,5 +39,10 @@ class TestExternalObjs(unittest.TestCase):
 
         self.assertEqual(uses_chain(), secret)
 
+    @classmethod
+    def tearDownClass(cls):
+        for name in ['uses_chain', 'sum_nonrepr']:
+            faas.remove_fn(name)
+
 if __name__ == '__main__':
     unittest.main()

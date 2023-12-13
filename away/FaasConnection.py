@@ -3,10 +3,10 @@ from requests.exceptions import ConnectionError
 import subprocess
 import os
 import yaml
+import platform
+import warnings
 
 from .exceptions import FaasReturnedError, FaasServiceUnavailableException, EnsureException
-
-import warnings
 
 class FaasConnection():
 
@@ -15,7 +15,8 @@ class FaasConnection():
         port: int = 8080,
         user: str = 'admin',
         password: str = None,
-        ensure_available: bool = True):
+        ensure_available: bool = True,
+        server_architecture: str | None = None):
 
         self.address = f'{provider}:{port}'
         self.auth_address = None
@@ -32,6 +33,11 @@ class FaasConnection():
             if has_password != has_user:
                 warnings.warn('Only one of [user, password] present, but not the other. auth will be blank', Warning)
 
+        if server_architecture is None and self.is_auth():
+            server_architecture = self.get_sysinfo()['arch']
+        
+        self.server_architecture = server_architecture
+
     def __cli_login(self, user: str, password: str | int):
         """
         Authenticates with the OpenFaaS server via CLI
@@ -45,7 +51,8 @@ class FaasConnection():
     def __repr__(self) -> str:
 
         return f'''FaasConnection at endpoint: {self.address};
-        Auth details: {"Not logged in" if self.auth_address is None else "Logged in"};
+        Arch: {self.server_architecture if self.server_architecture is not None else 'unknown'},
+        Auth details: {"Not logged in" if self.auth_address is None else "Logged in"},
         Is Available: {self.is_available()}'''
 
     def ensure_available(self):
@@ -159,10 +166,25 @@ class FaasConnection():
         arguments:
             fn_name: The name of folder and .yaml files for this function
         """
-        # Publish with faas cli
+        self.ensure_auth()
+
+        if self.server_architecture is not None and platform.machine() != self.server_architecture:
+            warnings.warn(f'The local system architecture is {platform.machine()}, but the server architecture was reported to be {self.server_architecture}. Built images may not be compatible with the server\'s architecture')
+
+        # Multi-arch publishing: https://docs.openfaas.com/cli/build/#building-multi-arch-images-for-arm-and-raspberry-pi
+        # NOTE: faas-cli's `publish` is failing due to unknown reasons, meaning multi-arch server support cannot be implemented
+        #        ---@pc:~$ faas new --lang python3 a
+        #        ---@pc:~$ faas publish -f a.yml --reset-qemu
+        #        Non-zero exit code: 125, stderr: unknown flag: --use
+
+        # Build with faas cli
         subprocess.run(
-            ['faas', 'up', '--gateway', f'http://{self.address}', '--yaml', f'{fn_name}.yml'],
+            ['faas', 'build', '--yaml', f'{fn_name}.yml'],
             check=True
+        )
+        # Deploy
+        subprocess.run(
+            ['faas', 'deploy', '-f', f'{fn_name}.yml', '--gateway', f'http://{self.address}']
         )
 
     def remove_fn(self, fn_name: str):
@@ -207,3 +229,17 @@ class FaasConnection():
         """
         annotations = self.get_function_annotations(fn_name)
         return 'built-with' in annotations and annotations['built-with'] == 'away'
+
+    def get_sysinfo(self) -> dict[str, str]:
+        """
+        Returns OpenFaaS system information. Requires authentication
+        """
+
+        self.ensure_auth()
+
+        endpoint = f'http://{self.address}/system/info'
+        res = requests.get(endpoint, headers={"Authorization": "Basic YWRtaW46MTIzNA=="})
+        if res.status_code != 200:
+            raise FaasReturnedError(res)
+        
+        return res.json()

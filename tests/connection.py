@@ -18,9 +18,9 @@ class TestConnection(unittest.TestCase):
         self.assertRaises(EnsureException, faas.ensure_fn_present, 'non_existent_function')
 
     def test_repr(self):
-        faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False)
+        faas = FaasConnection(provider='lettuce',password='potato', user='tomato', ensure_available=False, server_architecture='lol')
 
-        self.assertEqual('FaasConnection at endpoint: lettuce:8080;\n        Auth details: Not logged in;\n        Is Available: False', str(faas))
+        self.assertEqual('FaasConnection at endpoint: lettuce:8080;\n        Arch: lol,\n        Auth details: Not logged in,\n        Is Available: False', str(faas))
 
     def test_repr_noleak(self):
         password='mysecret'
